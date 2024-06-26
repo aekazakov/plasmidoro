@@ -28,10 +28,18 @@
           <h2>Information</h2>
         </header>
 		{% if info %}
-		  {% for item in info %}
-			<span>{{ item.name }}</span>
-			<h5>{{ item.description }}</h5>
-		  {% endfor %}
+		<div class="table-wrapper">
+		  <table>
+			<tbody>
+			  {% for item in info %}
+				<tr>
+				  <td><strong>{{ item.name }}</strong></td>
+				  <td>{{ item.description }}</td>
+				</tr>
+			  {% endfor %}
+			</tbody>
+		  </table>
+		</div>
 		{% endif %}
 		
 	  </div>

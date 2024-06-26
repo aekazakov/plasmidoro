@@ -224,8 +224,7 @@ def create_plasmid(plasmid_name, plasmid_data):
         )
     return 1
     
-def import_plasmids_table():
-    xlsx_path = '/mnt/data/work/Plasmids/datafiles/plasmid_maps/All_plasmids_Oct19_2023.xlsx'
+def import_plasmids_table(xlsx_path):
     xlsx_path = Path(xlsx_path)
     wb_obj = openpyxl.load_workbook(xlsx_path)
     sheet = wb_obj.active
@@ -251,7 +250,7 @@ def import_plasmids_table():
                         plasmid.amd_number = value
                         plasmid.save()
                 elif key == 'Drug marker':
-                    existing_markers = [item.name for item in plasmid.drug_markers.all]
+                    existing_markers = [item.name for item in plasmid.drug_markers.all()]
                     for marker in value.split('; '):
                         if marker not in existing_markers:
                             try:

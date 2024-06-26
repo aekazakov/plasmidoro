@@ -33,10 +33,28 @@
           <h2>Vector parts</h2>
         </header>
 		{% if vector_parts %}
-		  {% for item in vector_parts %}
-			<span><a href="{% url 'partdetails' part_id=item.part.id  %}">{{ item.part.name }}</a></span>
-			<h5>{{ item.part.description }}</h5>
-		  {% endfor %}
+		<div class="table-wrapper">
+		  <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>5' overhang</th>
+                <th>3' overhang</th>
+              </tr>
+            </thead>
+			<tbody>
+			  {% for item in vector_parts %}
+				<tr>
+				  <td><a href="{% url 'partdetails' part_id=item.part.id  %}"><strong>{{ item.part.name }}</strong></a></td>
+				  <td>{{ item.part.description }}</td>
+                  <td style="color:black;background-color:{{ item.part.upstream_overhang.color }}">{{ item.part.upstream_overhang }}</td>
+                  <td style="color:black;background-color:{{ item.part.downstream_overhang.color }}">{{ item.part.downstream_overhang }}</td>
+				</tr>
+			  {% endfor %}
+			</tbody>
+		  </table>
+		</div>
 		{% endif %}
 		
 	  </div>

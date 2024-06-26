@@ -38,8 +38,8 @@
                 <tr>
                   <td><a href="{% url 'partdetails' part_id=item.id  %}">{{ item.name }}</a></td>
                   <td>{{ item.description }}</td>
-                  <td>{{ item.upstream_overhang }}</td>
-                  <td>{{ item.downstream_overhang }}</td>
+                  <td style="color:black;background-color:{{ item.upstream_overhang.color }}">{{ item.upstream_overhang }}</td>
+                  <td style="color:black;background-color:{{ item.downstream_overhang.color }}">{{ item.downstream_overhang }}</td>
                 </tr>
               {% endfor %}
             </tbody>
