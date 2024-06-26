@@ -9,6 +9,7 @@ urlpatterns = [
     path('viewer/<int:plasmid_id>/', views.plasmid_viewer, name='plasmidviewer'),
     path('part/<int:part_id>/', views.part_detail, name='partdetails'),
     path('vector/<int:vector_id>/', views.vector_detail, name='vectordetails'),
+    path('oligo/<int:oligo_id>/', views.oligo_detail, name='oligodetails'),
     path('plasmids/', views.plasmids, name='plasmidslist'),
     path('parts/', views.parts, name='partslist'),
     path('vectors/', views.vectors, name='vectorslist'),
@@ -16,7 +17,7 @@ urlpatterns = [
     path('nuclsearch/',views.nucleotidesearch,name="nucleotidesearch"),
     path('protsearchform/',views.proteinsearchform,name="proteinsearchform"),
     path('protsearch/',views.proteinsearch,name="proteinsearch"),
-    path('help/', views.show_help, name='help'),
+    path('about/', views.show_help, name='about'),
     path('textsearch/', views.textsearch, name='textsearch'),
 
 

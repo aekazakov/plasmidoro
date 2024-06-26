@@ -23,7 +23,7 @@
     <section id="one" class="wrapper style3">
       <div class="inner">
         <header class="align-center">
-          <h2>{{ plasmid.name }} [{{ plasmid.amd_number }}]
+          <h2>{{ plasmid.name }}{% if plasmid.amd_number != '' %}[{{ plasmid.amd_number }}]{% endif %}
           </h2>
         </header>
         <div class="grid-style">

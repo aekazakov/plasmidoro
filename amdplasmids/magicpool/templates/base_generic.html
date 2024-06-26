@@ -30,8 +30,8 @@
       }
     }
     </script>
-    <style>.wrapper.style3 {background-image: url("{% static 'images/background.jpg' %}");}</style>
-    <style>.wrapper.style3.light {background-image: url("{% static 'images/background_light.jpg' %}");}</style>
+    <style>.wrapper.style3 {background-image: url("{% static 'images/beakerdark.jpg' %}");}</style>
+    <style>.wrapper.style3.light {background-image: url("{% static 'images/beakerlight.jpg' %}");}</style>
     {% block script-header %}
     {% endblock %}
   </head>
@@ -52,7 +52,8 @@
           <li><a href="{% url 'searchform' %}">Search</a></li>
           <li><a href="{% url 'nucleotidesearchform' %}">Nucleotide sequence search</a></li>
           <li><a href="{% url 'proteinsearchform' %}">Protein sequence search</a></li>
-          <li><a href="{% url 'help' %}">Help</a></li>
+		  <li><a href="https://drive.google.com/drive/u/0/folders/0B2iX2a1ua0vdfkh5Y011aVhuWVcybERkUEpXYUI3NnlYUEcwR1BNUnBHX1hJdjVzX0xrQWM?resourcekey=0-UVNHyY6k1voCBnf9vOzyzQ">Lab docs (GDrive)</a></li>
+          <li><a href="{% url 'about' %}">About</a></li>
           <li><a href="#" onclick="DarkMode()" title="Dark/light">Dark/light</a></li>
         </ul>
       </nav>

@@ -42,6 +42,23 @@
 		</div>
 		{% endif %}
 		
+		{% if vectors %}
+        <header class="align-center">
+          <h2>Vectors utilizing this part</h2>
+        </header>
+		<div class="table-wrapper">
+		  <table>
+			<tbody>
+			  {% for item in vectors %}
+				<tr>
+				  <td><a href="{% url 'vectordetails' vector_id=item.id  %}"><strong>{{ item.name }}</strong></a></td>
+				  <td>{{ item.description }}</td>
+				</tr>
+			  {% endfor %}
+			</tbody>
+		  </table>
+		</div>
+		{% endif %}
 	  </div>
     </section>
 {% endblock %}

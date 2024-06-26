@@ -1,0 +1,47 @@
+{% extends "base_generic.html" %}
+{% load static %}
+
+{% block page-title %}<title>{{ oligo.name }}</title>{% endblock %}
+
+{% block content %}
+    <section id="one" class="wrapper style3">
+      <div class="inner">
+        <header class="align-center">
+          <h2>{{ oligo.name }}</h2>
+        </header>
+        <div class="grid-style">
+          <div class="content">
+            <header class="align-center">
+              <p class="align-center">Sequence</p>
+            </header>
+			<h5>{{ oligo.sequence }}</h5>
+          </div>
+          <div class="content">
+            <header class="align-center">
+              <p class="align-center">Contact</p>
+            </header>
+			<h5>{{ oligo.contact.name }}</h5>
+          </div>
+        </div>
+        <header class="align-center">
+          <h2>Information</h2>
+        </header>
+		{% if info %}
+		<div class="table-wrapper">
+		  <table>
+			<tbody>
+			  {% for item in info %}
+				<tr>
+				  <td><strong>{{ item.param }}</strong></td>
+				  <td>{{ item.value }}</td>
+				</tr>
+			  {% endfor %}
+			</tbody>
+		  </table>
+		</div>
+		{% endif %}
+		
+	  </div>
+    </section>
+{% endblock %}
+

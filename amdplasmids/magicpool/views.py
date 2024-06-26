@@ -3,6 +3,8 @@ from django.template import loader
 from django.http import HttpResponse
 from django.db.models import Q
 from magicpool.models import *
+from magicpool.blast_search import run_protein_search
+from magicpool.blast_search import run_nucleotide_search
 
 def index(request):
 	#return HttpResponse("This is a start page.")
@@ -62,7 +64,8 @@ def part_detail(request, part_id):
     context = {
         'site_title':part.name,
         'part':part,
-        'info':Magic_pool_part_info.objects.filter(magic_pool_part=part_id)
+        'info':Magic_pool_part_info.objects.filter(magic_pool_part=part_id),
+        'vectors':Vector.objects.filter(vector_part__part__id=part_id)
         }
     return HttpResponse(template.render(context, request))
 
@@ -79,6 +82,18 @@ def vector_detail(request, vector_id):
         }
     return HttpResponse(template.render(context, request))
 
+    
+def oligo_detail(request, oligo_id):
+    '''
+        Displays oligo page
+    '''
+    template = loader.get_template('magicpool/oligo.html')
+    oligo = Oligo.objects.get(id=oligo_id)
+    context = {'oligo':oligo,
+        'info':Oligo_info.objects.filter(oligo=oligo_id),
+        }
+    return HttpResponse(template.render(context, request))
+    
 
 def plasmids(request):
     '''
@@ -123,6 +138,64 @@ def nucleotidesearchform(request):
 
 def nucleotidesearch(request):
     '''
+        Returns nucleotide search results 
+    '''
+    context = {}
+    if request.POST.get("sequence"):
+        result = {}
+        params = {'sequence': request.POST.get("sequence"),
+                  'evalue': request.POST.get("evalue"),
+                  'hitstoshow': request.POST.get("hitstoshow")
+                  }
+        hits, searchcontext, query_len, _ = run_nucleotide_search(params)
+        if searchcontext != '':
+            context['searchcontext'] = searchcontext
+        for row in hits:
+            row=row.split('\t')
+            print('Search for gene %s', row[1])
+            if row[0] not in result:
+                result[row[0]] = []
+            unaligned_part =  int(row[6]) - 1 + query_len - int(row[7])
+            query_cov = (query_len - unaligned_part) * 100.0 / query_len
+            target_tokens = row[1].split('|')
+            target_id = int(target_tokens[0])
+            if target_tokens[2] == 'plasmid':
+                plasmid = Plasmid.objects.get(id = target_id)
+                if plasmid.amd_number != '':
+                    plasmid_label = plasmid.name + '/' + plasmid.amd_number
+                else:
+                    plasmid_label = plasmid.name
+                hit = ['Plasmid',
+                       plasmid.id,
+                       plasmid_label,
+                       '{:.1f}'.format(float(row[2])),
+                       row[3],
+                       '{:.1f}'.format(query_cov),
+                       row[10],
+                       row[11]
+                       ]
+                result[row[0]].append(hit)
+            elif target_tokens[2] == 'oligo':
+                oligo = Oligo.objects.get(id = target_id)
+                hit = ['Oligo',
+                       oligo.id,
+                       oligo.name,
+                       '{:.1f}'.format(float(row[2])),
+                       row[3],
+                       '{:.1f}'.format(query_cov),
+                       row[10],
+                       row[11]
+                       ]
+                result[row[0]].append(hit)
+        context['searchresult'] = result
+    else:
+        return render(request,
+                      '404.html',
+                      {'searchcontext': 'Provide nucleotide sequence in FASTA format'}
+                      )
+    return render(request, 'magicpool/nucleotidesearch.html', context)
+
+    '''
         Displays nucleotide sequence search form
     '''
     #return render(request,'magicpool/nucleotidesearchform.html')
@@ -138,10 +211,49 @@ def proteinsearchform(request):
 
 def proteinsearch(request):
     '''
-        Displays protein sequence search form
+        Returns protein search results 
     '''
-    #return render(request,'magicpool/proteinsearchform.html')
-    return HttpResponse("Not implemented.")
+    context = {}
+    if request.POST.get("sequence"):
+        result = {}
+        params = {'sequence': request.POST.get("sequence"),
+                  'evalue': request.POST.get("evalue"),
+                  'hitstoshow': request.POST.get("hitstoshow")
+                  }
+        hits, searchcontext, query_len, _ = run_protein_search(params)
+        if searchcontext != '':
+            context['searchcontext'] = searchcontext
+        for row in hits:
+            row=row.split('\t')
+            print('Search for gene %s', row[1])
+            if row[0] not in result:
+                result[row[0]] = []
+            unaligned_part =  int(row[6]) - 1 + query_len - int(row[7])
+            query_cov = (query_len - unaligned_part) * 100.0 / query_len
+            proteins = Protein.objects.select_related(
+                'feature', 'feature__plasmid'
+            ).filter(
+                id = int(row[1].split('|')[0])
+            )
+            for protein in proteins:
+                hit = [protein.name,
+                       protein.feature.plasmid.id,
+                       protein.feature.plasmid.name,
+                       protein.function,
+                       '{:.1f}'.format(float(row[2])),
+                       row[3],
+                       '{:.1f}'.format(query_cov),
+                       row[10],
+                       row[11]
+                       ]
+                result[row[0]].append(hit)
+        context['searchresult'] = result
+    else:
+        return render(request,
+                      '404.html',
+                      {'searchcontext': 'Provide protein sequence in FASTA format'}
+                      )
+    return render(request, 'magicpool/proteinsearch.html', context)
 
 
 def textsearchform(request):

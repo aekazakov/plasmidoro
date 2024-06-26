@@ -9,6 +9,7 @@ from pathlib import Path
 from collections import defaultdict
 from Bio import SeqIO
 from Bio import GenBank
+from subprocess import Popen, PIPE, CalledProcessError
 from magicpool.models import *
 
 def autovivify(levels=1, final=dict):
@@ -411,5 +412,70 @@ def import_magic_pool(xlsx_path):
                 except Magic_pool_part.DoesNotExist:
                     print(item, ' NOT FOUND IN MAGIC POOL PARTS')
                 
-                    
+def make_blast_databases():
+    nucl_db_file = export_contigs()
+    cmd = ['makeblastdb', '-dbtype', 'nucl', '-in',
+           nucl_db_file, '-out',
+           '/mnt/data/work/Plasmids/plasmidoro/data/blast_nucl'
+           ]
+    print(' '.join(cmd))
+    with Popen(cmd, stdout=PIPE, bufsize=1, universal_newlines=True) as proc:
+        for line in proc.stdout:
+            print(line.rstrip('\n\r'))
+    if proc.returncode != 0:
+        # Suppress false positive no-member error
+        # (see https://github.com/PyCQA/pylint/issues/1860)
+        # pylint: disable=no-member
+        raise CalledProcessError(proc.returncode, proc.args)
     
+    prot_db_file = export_proteins()
+    cmd = ['makeblastdb', '-dbtype', 'prot', '-in',
+           prot_db_file, '-out',
+           '/mnt/data/work/Plasmids/plasmidoro/data/blast_prot'
+           ]
+    print(' '.join(cmd))
+    with Popen(cmd, stdout=PIPE, bufsize=1, universal_newlines=True) as proc:
+        for line in proc.stdout:
+            print(line.rstrip('\n\r'))
+    if proc.returncode != 0:
+        # Suppress false positive no-member error
+        # (see https://github.com/PyCQA/pylint/issues/1860)
+        # pylint: disable=no-member
+        raise CalledProcessError(proc.returncode, proc.args)
+    
+    
+def export_contigs():
+    """
+        Writes all nucleotide sequences into FASTA file
+        for blast database generation
+    """
+    nucl_db_file = '/mnt/data/work/Plasmids/plasmidoro/data/nucl.fna'
+    with open(nucl_db_file, 'w') as outfile:
+        for item in Plasmid.objects.values('id', 'name', 'amd_number', 'sequence'):
+            outfile.write('>' + str(item['id']) + '|' + item['name'] + '|plasmid|' + item['amd_number'] +
+                          '\n' + item['sequence'] +
+                          '\n')
+        for item in Oligo.objects.values('name', 'sequence'):
+            outfile.write('>' + str(item['id']) + '|' + item['name'] + '|oligo|' +
+                          '\n' + item['sequence'] +
+                          '\n')
+    return nucl_db_file
+    
+    
+def export_proteins():
+    """
+        Writes all protein sequences into FASTA file
+        for blast database generation
+    """
+    prot_db_file = '/mnt/data/work/Plasmids/plasmidoro/data/prot.fna'
+    with open(prot_db_file, 'w') as outfile:
+        for protein in Protein.objects.all():
+            if protein.sequence != '':
+                outfile.write('>' + str(protein.id) + '|' + protein.name + '|' +
+                    protein.feature.plasmid.name + '|' + protein.feature.location_str +
+                    '\n' + protein.sequence +
+                    '\n')
+    return prot_db_file
+    
+    
+

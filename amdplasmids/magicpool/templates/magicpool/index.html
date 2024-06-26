@@ -1,14 +1,14 @@
 {% extends "base_generic.html" %}
 {% load static %}
 {% block page-title %}<title>{%if site_title %}{{ site_title }}{% else %}Plasmidoro start page{% endif %}</title>{% endblock %}
-{% block title %} <div class="logo">Plasmidoro</div>{% endblock %}
+{% block title %} <div class="logo">Deutschbauer Lab plasmids</div>{% endblock %}
 
 {% block content %}
-        <div style="background-image:url('{% static 'images/background.jpg' %}');background-size:cover;min-height:100vh;height:100vh;">
+        <div style="background-image:url('{% static 'images/beaker.jpg' %}');background-size:cover;min-height:100vh;height:100vh;">
           <div class="box wrapper align-center" style="background-color:rgba(0,0,0,0.0)">
-            <header>
-              <p>Welcome to {%if site_title %}{{ site_title }}{% else %}Plasmidoro{% endif %}</p>
-            </header>
+			<div class="container">
+			  <h5>&nbsp;</h5>
+			</div>
             <br/>
             <div class="inner align-center">
               <a class="button 2u 12u$(medium) align-center icon fa-sun-o" href="{% url 'plasmidslist' %}">Plasmids</a>&nbsp;
@@ -18,8 +18,8 @@
               <hr/>
               <a class="button 2u 12u$(medium) align-center icon fa-search" href="{% url 'nucleotidesearchform' %}">Nucleotide BLAST</a>&nbsp;
               <a class="button 2u 12u$(medium) align-center icon fa-search" href="{% url 'proteinsearchform' %}">Protein BLAST</a>&nbsp;
-              <a class="button 2u 12u$(medium) align-center icon fa-info-circle" href="{% url 'help' %}">Quick help</a>&nbsp;
-              <a class="button 2u 12u$(medium) align-center icon fa-book" href="https://aekazakov.github.io/genome-depot/">Documentation</a>
+              <a class="button 2u 12u$(medium) align-center icon fa-book" href="https://drive.google.com/drive/u/0/folders/0B2iX2a1ua0vdfkh5Y011aVhuWVcybERkUEpXYUI3NnlYUEcwR1BNUnBHX1hJdjVzX0xrQWM?resourcekey=0-UVNHyY6k1voCBnf9vOzyzQ" target="_blank">Lab docs (GDrive)</a>&nbsp;
+              <a class="button 2u 12u$(medium) align-center icon fa-info-circle" href="{% url 'about' %}">About</a>
             </div>
           </div>
         </div>

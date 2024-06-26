@@ -1,19 +1,20 @@
 {% extends "base_generic.html" %}
 {% load static %}
-{% block page-title %}<title>Help</title>{% endblock %}
-{% block title %}<div class="logo"><h2>Help</h2></div>{% endblock %}
+{% block page-title %}<title>About</title>{% endblock %}
+{% block title %}<div class="logo"><h2>About</h2></div>{% endblock %}
 
 {% block content %}
         <section id="two" class="wrapper style3">
           <div class="inner">
             <div class="row 200%">
               <div class="6u 12u$(medium)">
-                <h3>About this site{%if site_title %}: {{ site_title }}{% else %}{% endif %}</h3>
-                <h5>Plasmidoro is a collection of plasmid vectors developed in Deutschbauer Lab at LBNL.</h5>
+				<img src="{% static 'images/powerofplasmids.jpg' %}">
               </div>
               <div class="6u$ 12u$(medium)">
+                <h3>About this site{%if site_title %}: {{ site_title }}{% else %}{% endif %}</h3>
+                <h5>Plasmidoro is a collection of plasmids and vectors developed in Deutschbauer Lab at LBNL.</h5>
                 <h3>Site content</h3>
-                <h5>This site contains plasmid sequences, oligos, magic pool vector parts, vectors etc.</h5>
+                <h5>This site contains plasmid sequences, oligos, magic pool parts, vector designs etc.</h5>
               </div>
             </div>
           </div>
