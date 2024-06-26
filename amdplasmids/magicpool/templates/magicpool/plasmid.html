@@ -1,0 +1,96 @@
+{% extends "base_generic.html" %}
+{% load static %}
+
+{% block page-title %}<title>{{ plasmid.name }}</title>{% endblock %}
+
+{% block script-header %}
+  <style>#sequence {display:none;}</style>
+  <script>
+    function Toggle() {
+      document.getElementById("sequence").style.display = "block";
+      document.getElementById("showsequence").style.display = "none";
+    }
+  </script>
+  <script>
+    function HideSequence() {
+      document.getElementById("sequence").style.display = "none";
+      document.getElementById("showsequence").style.display = "block";
+    }
+  </script>
+{% endblock %}
+
+{% block content %}
+    <section id="one" class="wrapper style3">
+      <div class="inner">
+        <header class="align-center">
+          <h2>{{ plasmid.name }} [{{ plasmid.amd_number }}]
+          </h2>
+        </header>
+        <div class="grid-style">
+          <div class="content">
+            <header class="align-center">
+              <p class="align-center">Description</p>
+            </header>
+			<h5 class="align-center">{{ plasmid.description }}</h5>
+			<h5 class="align-center"><a href="{% url 'plasmidviewer' plasmid_id=plasmid.id  %}" target="_blank">View the plasmid in SeqViz</a></h5>
+          </div>
+          <div class="content">
+            <header class="align-center">
+              <p class="align-center">Plasmid info</p>
+            </header>
+			{% if plasmid_info %}
+			  {% for item in plasmid_info %}
+				<span>{{ item.param }}</span>
+				<h5>{{ item.value }}</h5>
+			  {% endfor %}
+			{% endif %}
+          </div>
+        </div>
+        <header class="align-center">
+          <h2>Features</h2>
+        </header>
+		{% if features %}
+		
+		<div class="table-wrapper">
+		  <table>
+			<thead>
+			  <tr>
+				<th>Name</th>
+				<th>Type</th>
+				<th>Location</th>
+				<th>Description</th>
+			  </tr>
+			</thead>
+			<tbody>
+			  {% for feature in features %}
+				<tr>
+				  <td>{{ feature.name }}</td>
+				  <td>{{ feature.feature_type.name }}</td>
+				  <td>{{ feature.location_str }}</td>
+				  <td>{{ feature.description }}</td>
+				</tr>
+			  {% endfor %}
+			</tbody>
+		  </table>
+		</div>
+		{% endif %}
+        <header class="align-center">
+          <h2>Plasmid sequence</h2>
+        </header>
+        <div>
+          <header class="align-center" id="showsequence">
+            <a onclick="Toggle()">Click to show sequence</a>
+          </header>
+          <div id="sequence">
+            <header class="align-center" id="hidesequence">
+              <a onclick="HideSequence()">Click to hide sequence</a>
+            </header>
+            <textarea id="plasmidsequence" name="plasmidsequence" rows="10" cols="50">>{{ plasmid.name }}|{{ plasmid.amd_number }}
+{{ plasmid.sequence }}</textarea>
+          </div>
+        </div>
+		
+	  </div>
+    </section>
+{% endblock %}
+

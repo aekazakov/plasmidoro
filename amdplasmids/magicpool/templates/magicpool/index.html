@@ -1,0 +1,26 @@
+{% extends "base_generic.html" %}
+{% load static %}
+{% block page-title %}<title>{%if site_title %}{{ site_title }}{% else %}Plasmidoro start page{% endif %}</title>{% endblock %}
+{% block title %} <div class="logo">Plasmidoro</div>{% endblock %}
+
+{% block content %}
+        <div style="background-image:url('{% static 'images/background.jpg' %}');background-size:cover;min-height:100vh;height:100vh;">
+          <div class="box wrapper align-center" style="background-color:rgba(0,0,0,0.0)">
+            <header>
+              <p>Welcome to {%if site_title %}{{ site_title }}{% else %}Plasmidoro{% endif %}</p>
+            </header>
+            <br/>
+            <div class="inner align-center">
+              <a class="button 2u 12u$(medium) align-center icon fa-sun-o" href="{% url 'plasmidslist' %}">Plasmids</a>&nbsp;
+              <a class="button 2u 12u$(medium) align-center icon fa-chain-broken" href="{% url 'partslist' %}">Magic pool parts</a>&nbsp;
+              <a class="button 2u 12u$(medium) align-center icon fa-repeat" href="{% url 'vectorslist' %}">Vector designs</a>&nbsp;
+              <a class="button 2u 12u$(medium) align-center icon fa-search" href="{% url 'searchform' %}">Search</a>
+              <hr/>
+              <a class="button 2u 12u$(medium) align-center icon fa-search" href="{% url 'nucleotidesearchform' %}">Nucleotide BLAST</a>&nbsp;
+              <a class="button 2u 12u$(medium) align-center icon fa-search" href="{% url 'proteinsearchform' %}">Protein BLAST</a>&nbsp;
+              <a class="button 2u 12u$(medium) align-center icon fa-info-circle" href="{% url 'help' %}">Quick help</a>&nbsp;
+              <a class="button 2u 12u$(medium) align-center icon fa-book" href="https://aekazakov.github.io/genome-depot/">Documentation</a>
+            </div>
+          </div>
+        </div>
+{% endblock %}

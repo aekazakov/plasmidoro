@@ -1,0 +1,44 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    {% block page-title %}<title>{%if site_title %}{{ site_title }}{% else %}Plasmidoro{% endif %}</title>{% endblock %}
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+	<script src="https://unpkg.com/seqviz"></script>
+  </head>
+  <body>
+	<div id="viewer">
+	</div>
+    <script>
+	props = {
+		seq : "{{ plasmid.sequence }}",
+		name : "{{ plasmid.name }}",
+		annotations : [
+	    {% if features %}
+		  {% for feature in features %}
+			{start: {{ feature.start }}, end: {{ feature.end }}, direction: {{ feature.strand }}, name: "{{ feature.name }}" },
+		  {% endfor %}
+		{% endif %}
+		],
+		translations : [
+	    {% if translations %}
+		  {% for feature in translations %}
+			{start: {{ feature.start }}, end: {{ feature.end }}, direction: {{ feature.strand }} },
+		  {% endfor %}
+		{% endif %}
+		],
+		
+		bpColors : { A: "#FF0000", T: "blue", G: "#013220" },
+		style: { height: "88vh", width: "90	vw", background: "gray", background: "rgba(255,255,255,1.0)" },
+	}
+    const element = document.getElementById("viewer");
+	const viewer = seqviz.Viewer(element, props);
+	// Render the viewer to the DOM at the node passed in $element`.
+	viewer.render();
+	// To later update the viewer's configuration and re-renders.
+	viewer.setState(props);
+	// To render the viewer, eg for server-side rendering, and returns it as an HTML string.
+	viewer.renderToString();
+    </script>
+    </body>
+</html>

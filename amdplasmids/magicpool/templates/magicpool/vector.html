@@ -1,0 +1,45 @@
+{% extends "base_generic.html" %}
+{% load static %}
+
+{% block page-title %}<title>{{ vector.name }}</title>{% endblock %}
+
+
+{% block content %}
+    <section id="one" class="wrapper style3">
+      <div class="inner">
+        <header class="align-center">
+          <h2>{{ vector.name }}</h2>
+        </header>
+        <div class="grid-style">
+          <div class="content">
+            <header class="align-center">
+              <p class="align-center">Description</p>
+            </header>
+			<h5 class="align-center">{{ vector.description }}</h5>
+          </div>
+          <div class="content">
+            <header class="align-center">
+              <p class="align-center">Vector info</p>
+            </header>
+			{% if info %}
+			  {% for item in info %}
+				<span>{{ item.param }}</span>
+				<h5>{{ item.value }}</h5>
+			  {% endfor %}
+			{% endif %}
+          </div>
+        </div>
+        <header class="align-center">
+          <h2>Vector parts</h2>
+        </header>
+		{% if vector_parts %}
+		  {% for item in vector_parts %}
+			<span><a href="{% url 'partdetails' part_id=item.part.id  %}">{{ item.part.name }}</a></span>
+			<h5>{{ item.part.description }}</h5>
+		  {% endfor %}
+		{% endif %}
+		
+	  </div>
+    </section>
+{% endblock %}
+

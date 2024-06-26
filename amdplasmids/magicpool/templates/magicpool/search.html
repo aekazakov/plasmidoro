@@ -1,0 +1,44 @@
+{% extends "base_generic.html" %}
+{% load my_tags %}
+{% load static %}
+{% block page-title %}<title>Text search</title>{% endblock %}
+{% block script-header %}
+{% endblock %}
+
+{% block title %}<div class="logo"><h2>Text search</h2></div>{% endblock %}
+
+{% block content %}
+        <section id="two" class="wrapper style3">
+          <div class="inner">
+            <div class="content">
+              <header class="align-center">
+                <h4 class="align-center">Find plasmids by name, AMD number or description</h4>
+              </header>
+              <p>
+				<form action="{% url 'textsearch' %}" method="get">
+				  <input name="query" type="text" placeholder="Quick search by plasmid name or description...">
+				  <input type="hidden" name="type" id="type" value="plasmid">
+				</form>
+              </p>
+              <header class="align-center">
+                <h4>Search in vector designs</h4>
+              </header>
+              <p>
+				<form action="{% url 'textsearch' %}" method="get">
+				  <input name="query" type="text" placeholder="Quick search by name or description...">
+				  <input type="hidden" name="type" id="type" value="vector">
+				</form>
+              </p>
+              <header class="align-center">
+                <h4>Search in magic pool parts</h4>
+              </header>
+              <p>
+				<form action="{% url 'textsearch' %}" method="get">
+				  <input name="query" type="text" placeholder="Quick search by name or description...">
+				  <input type="hidden" name="type" id="type" value="part">
+				</form>
+              </p>
+            </div>
+          </div>
+        </section>
+{% endblock %}

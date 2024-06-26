@@ -1,0 +1,40 @@
+{% extends "base_generic.html" %}
+{% load static %}
+
+{% block page-title %}<title>{{ part.name }}</title>{% endblock %}
+
+{% block content %}
+    <section id="one" class="wrapper style3">
+      <div class="inner">
+        <header class="align-center">
+          <h2>{{ part.name }}</h2>
+        </header>
+        <div class="grid-style">
+          <div class="content">
+            <header class="align-center">
+              <p class="align-center">Description</p>
+            </header>
+			<h5>{{ part.description }}</h5>
+          </div>
+          <div class="content">
+            <header class="align-center">
+              <p class="align-center">Overhangs</p>
+            </header>
+			<h5 class="align-center" style="color:black;background-color:{{ part.upstream_overhang.color }}">{{ part.upstream_overhang.name }}</h5>
+			<h5 class="align-center" style="color:black;background-color:{{ part.downstream_overhang.color }}">{{ part.downstream_overhang.name }}</h5>
+          </div>
+        </div>
+        <header class="align-center">
+          <h2>Information</h2>
+        </header>
+		{% if info %}
+		  {% for item in info %}
+			<span>{{ item.name }}</span>
+			<h5>{{ item.description }}</h5>
+		  {% endfor %}
+		{% endif %}
+		
+	  </div>
+    </section>
+{% endblock %}
+
