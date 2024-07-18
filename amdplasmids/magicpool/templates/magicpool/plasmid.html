@@ -32,7 +32,15 @@
               <p class="align-center">Description</p>
             </header>
 			<h5 class="align-center">{{ plasmid.description }}</h5>
+			{% if plasmid.sequence %}
 			<h5 class="align-center"><a href="{% url 'plasmidviewer' plasmid_id=plasmid.id  %}" target="_blank">View the plasmid in SeqViz</a></h5>
+			{% endif %}
+			{% if plasmid.magic_pool_part %}
+            <header class="align-center">
+              <p class="align-center">Magic pool part</p>
+            </header>
+			<h5 class="align-center"><a href="{% url 'partdetails' part_id=plasmid.magic_pool_part.id  %}">{{ plasmid.magic_pool_part }}</a></h5>
+		    {% endif %}
           </div>
           <div class="content">
             <header class="align-center">
@@ -74,6 +82,7 @@
 		  </table>
 		</div>
 		{% endif %}
+	    {% if plasmid.sequence %}
         <header class="align-center">
           <h2>Plasmid sequence</h2>
         </header>
@@ -89,6 +98,11 @@
 {{ plasmid.sequence }}</textarea>
           </div>
         </div>
+		{% else %}
+        <header class="align-center">
+          <h2>No sequence available</h2>
+        </header>
+		{% endif %}
 		
 	  </div>
     </section>

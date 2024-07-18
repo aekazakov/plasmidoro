@@ -65,7 +65,8 @@ def part_detail(request, part_id):
         'site_title':part.name,
         'part':part,
         'info':Magic_pool_part_info.objects.filter(magic_pool_part=part_id),
-        'vectors':Vector.objects.filter(vector_part__part__id=part_id)
+        'vectors':Vector.objects.filter(vector_part__part__id=part_id),
+        'plasmids':Plasmid.objects.filter(magic_pool_part__id=part_id)
         }
     return HttpResponse(template.render(context, request))
 

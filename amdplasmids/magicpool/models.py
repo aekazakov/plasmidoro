@@ -149,6 +149,7 @@ class Plasmid(models.Model):
     sequence = models.TextField(blank=True)
     drug_markers = models.ManyToManyField(Drug_marker)
     vector = models.ForeignKey(Vector, on_delete=models.SET_NULL, blank=True, null=True)
+    magic_pool_part = models.ForeignKey(Magic_pool_part, on_delete=models.SET_NULL, blank=True, null=True)
     contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):

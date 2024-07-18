@@ -29,6 +29,7 @@
               <tr>
                 <th>Plasmid</th>
                 <th>AMD number</th>
+                <th>Magic pool part</th>
                 <th>Size</th>
                 <th>Description</th>
               </tr>
@@ -38,6 +39,11 @@
                 <tr>
                   <td><a href="{% url 'plasmiddetails' plasmid_id=plasmid.id  %}">{{ plasmid.name }}</a></td>
                   <td>{{ plasmid.amd_number }}</td>
+				{% if plasmid.magic_pool_part %}
+                  <td>{{ plasmid.magic_pool_part.name }}</td>
+		        {% else %}
+				  <td></td>
+		        {% endif %}
                   <td>{{ plasmid.sequence|length }}</td>
                   <td>{{ plasmid.description }}</td>
                 </tr>

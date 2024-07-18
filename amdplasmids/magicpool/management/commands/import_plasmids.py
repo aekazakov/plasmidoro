@@ -21,4 +21,5 @@ class Command(BaseCommand):
             work_dir = '/mnt/data/work/Plasmids/datafiles/plasmid_maps'
         else:
             work_dir = options['i']
+        print(work_dir)
         update_plasmids(work_dir, options['overwrite'])

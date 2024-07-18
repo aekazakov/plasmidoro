@@ -59,7 +59,34 @@
 		  </table>
 		</div>
 		{% endif %}
-	  </div>
+
+
+		{% if plasmids %}
+        <header class="align-center">
+          <h2>Plasmids with this part</h2>
+        </header>
+		<div class="table-wrapper">
+		  <table>
+            <thead>
+              <tr>
+                <th>Plasmid</th>
+                <th>Size</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+			<tbody>
+			  {% for item in plasmids %}
+				<tr>
+				  <td><a href="{% url 'plasmiddetails' plasmid_id=item.id  %}">{{ item.name }}</a></td>
+				  <td>{{ item.sequence|length }}</td>
+				  <td>{{ item.description }}</td>
+				</tr>
+			  {% endfor %}
+			</tbody>
+		  </table>
+		</div>
+		{% endif %}
+		</div>
     </section>
 {% endblock %}
 
