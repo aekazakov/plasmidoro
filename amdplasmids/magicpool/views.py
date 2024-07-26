@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render
 from django.template import loader
 from django.http import HttpResponse
@@ -5,6 +6,7 @@ from django.db.models import Q
 from magicpool.models import *
 from magicpool.blast_search import run_protein_search
 from magicpool.blast_search import run_nucleotide_search
+from amdplasmids.settings import STATICFILES_DIRS, STATIC_URL
 
 def index(request):
 	#return HttpResponse("This is a start page.")
@@ -77,10 +79,13 @@ def vector_detail(request, vector_id):
     '''
     template = loader.get_template('magicpool/vector.html')
     vector = Vector.objects.get(id=vector_id)
+    img_path = os.path.join(STATICFILES_DIRS[0], 'vectors', vector.name + '.png')
     context = {'vector':vector,
         'info':Vector_info.objects.filter(vector=vector_id),
-        'vector_parts':Vector_part.objects.filter(vector=vector_id).select_related('part')
+        'vector_parts':Vector_part.objects.filter(vector=vector_id).select_related('part'),
         }
+    if os.path.exists(img_path):
+        context['img'] = STATIC_URL + '/vectors/' + vector.name + '.png'
     return HttpResponse(template.render(context, request))
 
     
