@@ -55,10 +55,10 @@
 			{% endif %}
           </div>
         </div>
+		{% if plasmids %}
         <header class="align-center">
           <h2>Plasmids</h2>
         </header>
-		{% if plasmids %}
 		<div class="table-wrapper">
 		  <table>
 			<thead>
@@ -83,6 +83,9 @@
 		</div>
 		{% else %}
 		  {% if strain.plasmid != '' %}
+        <header class="align-center">
+          <h2>Plasmids</h2>
+        </header>
 		<div class="table-wrapper">
 		  <table>
 			<thead>
@@ -96,9 +99,7 @@
 			<tbody>
 				<tr>
 				  <td>{{ strain.plasmid }}</a></td>
-				  <td></td>
-				  <td></td>
-				  <td>No entry for this plasmid.</td>
+				  <td colspan="3" class="error box" style="text-align:center">Plasmid not found.</td>
 				</tr>
 			</tbody>
 		  </table>
