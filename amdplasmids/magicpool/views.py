@@ -35,11 +35,14 @@ def plasmid_detail(request, plasmid_id):
         'plasmid':plasmid,
         'plasmid_info':Plasmid_info.objects.filter(plasmid=plasmid.id),
         'features': Feature.objects.filter(plasmid=plasmid.id).order_by('start')
+        
         }
+    if Strain.objects.filter(amd_number=plasmid.amd_number).exists():
+        context['strain'] = Strain.objects.get(amd_number=plasmid.amd_number)
     print(context)
     return HttpResponse(template.render(context, request))
 
-    
+
 def plasmid_viewer(request, plasmid_id):
     '''
         Displays plasmid viewer
@@ -101,6 +104,24 @@ def oligo_detail(request, oligo_id):
     return HttpResponse(template.render(context, request))
     
 
+def strain_detail(request, strain_id):
+    '''
+        Displays strain page
+    '''
+    template = loader.get_template('magicpool/strain.html')
+    strain = Strain.objects.get(id=strain_id)
+    plasmids = Plasmid.objects.filter(name=strain.plasmid)
+    context = {
+        'site_title': str(strain),
+        'strain':strain,
+        'strain_info':Strain_info.objects.filter(strain=strain.id),
+        'plasmids':plasmids
+        }
+        
+    print(context)
+    return HttpResponse(template.render(context, request))
+
+    
 def plasmids(request):
     '''
         Displays list of plasmids
@@ -130,6 +151,18 @@ def vectors(request):
     template = loader.get_template('magicpool/vectors.html')
     context = {
         'itemlist':Vector.objects.order_by('name')
+        }
+    print(context)
+    return HttpResponse(template.render(context, request))
+
+
+def strains(request):
+    '''
+        Displays list of strains
+    '''
+    template = loader.get_template('magicpool/strains.html')
+    context = {
+        'itemlist':Strain.objects.order_by('amd_number')
         }
     print(context)
     return HttpResponse(template.render(context, request))
@@ -318,6 +351,23 @@ def textsearch(request):
         template = loader.get_template('magicpool/vectors.html')
         context={
             'site_title':'Vector search results',
+            'itemlist':object_list,
+            'searchcontext':query
+            }
+    elif type == 'strain':
+        if query:
+            object_list = Strain.objects.filter(
+                    (Q(name__icontains=query) |
+                    Q(amd_number__icontains=query) |
+                    Q(species__icontains=query) |
+                    Q(description__icontains=query))
+                ).distinct().order_by('amd_number')
+        else:
+            query = ''
+            object_list = Strain.objects.none()
+        template = loader.get_template('magicpool/strains.html')
+        context={
+            'site_title':'Strain search results',
             'itemlist':object_list,
             'searchcontext':query
             }

@@ -16,7 +16,7 @@
               </header>
               <p>
 				<form action="{% url 'textsearch' %}" method="get">
-				  <input name="query" type="text" placeholder="Quick search by plasmid name or description...">
+				  <input name="query" type="text" placeholder="Search by plasmid name or description...">
 				  <input type="hidden" name="type" id="type" value="plasmid">
 				</form>
               </p>
@@ -25,7 +25,7 @@
               </header>
               <p>
 				<form action="{% url 'textsearch' %}" method="get">
-				  <input name="query" type="text" placeholder="Quick search by name or description...">
+				  <input name="query" type="text" placeholder="Search by name or description...">
 				  <input type="hidden" name="type" id="type" value="vector">
 				</form>
               </p>
@@ -34,8 +34,17 @@
               </header>
               <p>
 				<form action="{% url 'textsearch' %}" method="get">
-				  <input name="query" type="text" placeholder="Quick search by name or description...">
+				  <input name="query" type="text" placeholder="Search by name or description...">
 				  <input type="hidden" name="type" id="type" value="part">
+				</form>
+              </p>
+              <header class="align-center">
+                <h4>Search in strains</h4>
+              </header>
+              <p>
+				<form action="{% url 'textsearch' %}" method="get">
+				  <input name="query" type="text" placeholder="Search by name, species or description...">
+				  <input type="hidden" name="type" id="type" value="strain">
 				</form>
               </p>
             </div>

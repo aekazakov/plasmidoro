@@ -1,0 +1,112 @@
+{% extends "base_generic.html" %}
+{% load static %}
+
+{% block page-title %}<title>{{ strain.amd_number }}</title>{% endblock %}
+
+{% block script-header %}
+  <style>#sequence {display:none;}</style>
+  <script>
+    function Toggle() {
+      document.getElementById("sequence").style.display = "block";
+      document.getElementById("showsequence").style.display = "none";
+    }
+  </script>
+  <script>
+    function HideSequence() {
+      document.getElementById("sequence").style.display = "none";
+      document.getElementById("showsequence").style.display = "block";
+    }
+  </script>
+{% endblock %}
+
+{% block content %}
+    <section id="one" class="wrapper style3">
+      <div class="inner">
+        <header class="align-center">
+          <h2>{{ strain.amd_number }} {% if strain.species != '' %}[{{ strain.species }}]{% endif %}
+          </h2>
+        </header>
+        <div class="grid-style">
+          <div class="content">
+            <header class="align-center">
+              <p class="align-center">Strain</p>
+            </header>
+			<h5 class="align-center">{{ strain.name }}</h5>
+            <header class="align-center">
+              <p class="align-center">Description</p>
+            </header>
+			<h5 class="align-center">{{ strain.description }}</h5>
+			{% if plasmid.magic_pool_part %}
+            <header class="align-center">
+              <p class="align-center">Magic pool part</p>
+            </header>
+			<h5 class="align-center"><a href="{% url 'partdetails' part_id=plasmid.magic_pool_part.id  %}">{{ plasmid.magic_pool_part }}</a></h5>
+		    {% endif %}
+          </div>
+          <div class="content">
+            <header class="align-center">
+              <p class="align-center">Strain info</p>
+            </header>
+			{% if strain_info %}
+			  {% for item in strain_info %}
+				<span><strong>{{ item.param }}</strong></span>
+				<h5>{{ item.value }}</h5>
+			  {% endfor %}
+			{% endif %}
+          </div>
+        </div>
+        <header class="align-center">
+          <h2>Plasmids</h2>
+        </header>
+		{% if plasmids %}
+		<div class="table-wrapper">
+		  <table>
+			<thead>
+			  <tr>
+				<th>Plasmid</th>
+				<th>Magic pool part</th>
+				<th>Size</th>
+				<th>Description</th>
+			  </tr>
+			</thead>
+			<tbody>
+			  {% for item in plasmids %}
+				<tr>
+				  <td><a href="{% url 'plasmiddetails' plasmid_id=item.id  %}">{{ item.name }}</a></td>
+				  <td>{% if item.magic_pool_part %}{{ item.magic_pool_part.name }}{% endif %}</td>
+				  <td>{{ item.sequence|length }}</td>
+				  <td>{{ item.description }}</td>
+				</tr>
+			  {% endfor %}
+			</tbody>
+		  </table>
+		</div>
+		{% else %}
+		  {% if strain.plasmid != '' %}
+		<div class="table-wrapper">
+		  <table>
+			<thead>
+			  <tr>
+				<th>Plasmid</th>
+				<th>Magic pool part</th>
+				<th>Size</th>
+				<th>Description</th>
+			  </tr>
+			</thead>
+			<tbody>
+				<tr>
+				  <td>{{ strain.plasmid }}</a></td>
+				  <td></td>
+				  <td></td>
+				  <td>No entry for this plasmid.</td>
+				</tr>
+			</tbody>
+		  </table>
+		</div>
+		  {% endif %}
+		{% endif %}
+		
+	  </div>
+    </section>
+{% endblock %}
+

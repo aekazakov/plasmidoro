@@ -216,3 +216,29 @@ class Plasmid_info(models.Model):
     def __str__(self):
         return self.plasmid.name + ': ' + self.param
 
+
+class Strain(models.Model):
+    '''
+        stores information about strains from the "AMD strain collection" spreadsheet
+        
+    '''
+    amd_number = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True)
+    plasmid = models.CharField(max_length=255, blank=True)
+    species = models.CharField(max_length=255, blank=True)
+    name = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return self.amd_number + ' [' + self.species + ']'
+
+class Strain_info(models.Model):
+    '''
+        unstructured information about strains from the "AMD strain collection" spreadsheet
+        
+    '''
+    strain = models.ForeignKey(Strain, on_delete=models.CASCADE)
+    param = models.CharField(max_length=255)
+    value = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.strain.amd_number + ': ' + self.param

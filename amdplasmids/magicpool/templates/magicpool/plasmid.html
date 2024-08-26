@@ -23,8 +23,7 @@
     <section id="one" class="wrapper style3">
       <div class="inner">
         <header class="align-center">
-          <h2>{{ plasmid.name }}{% if plasmid.amd_number != '' %}[{{ plasmid.amd_number }}]{% endif %}
-          </h2>
+          <h2>{{ plasmid.name }}</h2>
         </header>
         <div class="grid-style">
           <div class="content">
@@ -35,6 +34,17 @@
 			{% if plasmid.sequence %}
 			<h5 class="align-center"><a href="{% url 'plasmidviewer' plasmid_id=plasmid.id  %}" target="_blank">View the plasmid in SeqViz</a></h5>
 			{% endif %}
+			{% if plasmid.amd_number != '' %}
+            <header class="align-center">
+              <p class="align-center">Strain</p>
+            </header>
+			  {% if strain != '' %}
+			  <h5 class="align-center"><a href="{% url 'straindetails' strain_id=strain.id  %}">{{ plasmid.amd_number }}</a></h5>
+		      {% else %}
+			  <h5 class="align-center">{{ plasmid.amd_number }}</h5>
+		      {% endif %}
+		    {% endif %}
+
 			{% if plasmid.magic_pool_part %}
             <header class="align-center">
               <p class="align-center">Magic pool part</p>

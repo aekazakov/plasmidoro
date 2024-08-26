@@ -479,7 +479,108 @@ def import_magic_pool(xlsx_path):
                     )
                 except Magic_pool_part.DoesNotExist:
                     print(item, ' NOT FOUND IN MAGIC POOL PARTS')
-                
+
+
+def create_strain(amd_number, strain_data):
+    species = ''
+    description = ''
+    plasmid = ''
+    name = ''
+    if 'Species' in strain_data:
+        species = strain_data['Species']
+    if 'Description' in strain_data:
+        description = strain_data['Description']
+    if 'Plasmid' in strain_data:
+        plasmid = strain_data['Plasmid']
+    if 'Strain' in strain_data:
+        name = strain_data['Strain']
+    strain_obj = Strain.objects.create(
+        name = name,
+        amd_number = amd_number,
+        description = description,
+        species = species,
+        plasmid = plasmid
+    )
+    for key, value in strain_data.items():
+        if key in ('Strain', 'Description', 'Species', 'Plasmid'):
+            continue
+        if key == '' or key is None:
+            continue
+        if value == '' or value is None:
+            continue
+        strain_info_obj = Strain_info.objects.create(
+            strain = strain_obj,
+            param = key,
+            value = value
+        )
+    return 1
+
+
+def import_strains_table(xlsx_path, overwrite_existing=False):
+    print(xlsx_path)
+    xlsx_path = Path(xlsx_path)
+    wb_obj = openpyxl.load_workbook(xlsx_path)
+    created_count = 0
+    for sheet in wb_obj.worksheets:
+        print('Working on ' + sheet.title)
+        xlsx_header = []
+        data_imported = defaultdict(dict)
+        for i, row in enumerate(sheet.iter_rows(values_only=True)):
+            if i == 0:
+                xlsx_header = row
+            else:
+                amd_number = str(row[0])
+                if amd_number is None or not amd_number.startswith('AMD'):
+                    continue
+                for j, cell in enumerate(row):
+                    if j == 0:
+                        continue
+                    if cell != '' and cell != 'None' and cell is not None:
+                        data_imported[amd_number][xlsx_header[j]] = str(cell)
+        if str(xlsx_header[0]) != 'Strain':
+            print('Skipping ' + sheet.title)
+            continue
+        for amd_number, strain_data in data_imported.items():
+            if Strain.objects.filter(amd_number=amd_number).exists():
+                strain = Strain.objects.get(amd_number=amd_number)
+                if not overwrite_existing:
+                    continue
+                for key,value in strain_data.items():
+                    if key == 'Strain':
+                        if strain.name != value:
+                            strain.name = value
+                            strain.save()
+                    elif key == 'Plasmid':
+                        if strain.plasmid != value:
+                            strain.plasmid = value
+                            strain.save()
+                    elif key == 'Description':
+                        if strain.description != value:
+                            strain.description = value
+                            strain.save()
+                    elif key == 'Species':
+                        if strain.species != value:
+                            strain.species = value
+                            strain.save()
+                    elif key == '' or key is None:
+                        continue
+                    else:
+                        if Strain_info.objects.filter(strain=strain.id,param=key).exists():
+                            strain_info_obj = Strain_info.objects.get(strain=strain.id,param=key)
+                            if strain_info_obj.value != value:
+                                strain_info_obj.value = value
+                                strain_info_obj.save()
+                        elif value != '' and not value is None:
+                            Strain_info.objects.create(
+                                strain = strain,
+                                param = key,
+                                value = value
+                                )
+            else:
+                created_count += create_strain(amd_number, strain_data)
+    print(created_count, 'new strains created')
+
+
 def make_blast_databases():
     nucl_db_file = export_contigs()
     cmd = ['makeblastdb', '-dbtype', 'nucl', '-in',
