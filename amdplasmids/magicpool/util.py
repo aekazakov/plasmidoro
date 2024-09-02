@@ -5,6 +5,7 @@ import os
 import sys
 import gzip
 import openpyxl
+import hashlib
 from pathlib import Path
 from collections import defaultdict
 from Bio import SeqIO
@@ -128,24 +129,28 @@ def create_feature(feature, plasmid_obj):
     return 1    
             
 
-def import_seq_records(records, seq_name, overwrite_existing=False):
+def import_seq_records(records, seq_name, sequence_file, overwrite_existing=False):
     record_count = 0
     for seq_record in records:
+        record_count += 1
         if record_count > 1:
             continue
         existing_plasmids = Plasmid.objects.filter(name=seq_name)
         seq_record_sequence = str(seq_record.seq)
+        new_footprint = hashlib.md5(seq_record_sequence.encode('utf-8')).hexdigest()
         feature_count = 0
         if existing_plasmids.exists():
             # Check sequence
             existing_plasmid = existing_plasmids.first()
             if overwrite_existing:
-                if existing_plasmid.sequence == seq_record_sequence and Feature.objects.filter(plasmid=existing_plasmid.id).exists():
+                if existing_plasmid.footprint == new_footprint and Feature.objects.filter(plasmid=existing_plasmid.id).exists():
                     # Update only features
                     for feature in seq_record.features:
                         feature_count += create_feature(feature, existing_plasmid)
                     if feature_count > 0:
                         print(existing_plasmid.name, 'object updated')
+                        existing_plasmid.sequence_file = sequence_file
+                        existing_plasmid.save()
                         ret_val = 1
                     else:
                         # Nothing to do here
@@ -154,6 +159,7 @@ def import_seq_records(records, seq_name, overwrite_existing=False):
                 else:
                     # Replace sequence, wipe out old features and create new features
                     existing_plasmid.sequence = seq_record_sequence
+                    existing_plasmid.sequence_file = sequence_file
                     existing_plasmid.save()
                     Feature.objects.filter(plasmid=existing_plasmid.id).delete()
                     Protein.objects.filter(feature=None).delete()
@@ -172,29 +178,41 @@ def import_seq_records(records, seq_name, overwrite_existing=False):
                 amd_number = '',
                 description = '',
                 sequence = seq_record_sequence,
+                footprint = new_footprint,
+                sequence_file = sequence_file
             )
             for feature in seq_record.features:
                 feature_count += create_feature(feature, plasmid_obj)
             print(seq_name, ' object created')
             ret_val = 1
-        record_count += 1
     if record_count > 1:
         print(record_count, 'records provided for import. Only the first record will be imported')
     print(feature_count, 'features created')
     return ret_val
 
-def import_plasmid_snapgene(dna_file, overwrite_existing):
+def import_plasmid_snapgene(dna_file, sequence_file, overwrite_existing):
     print('Working on Snapgene file', dna_file)
     records = SeqIO.parse(dna_file, "snapgene")
     filename = dna_file.split('/')[-1]
     try:
-        ret_val = import_seq_records(records, filename.split('.dna')[0], overwrite_existing)
+        ret_val = import_seq_records(records, filename.split('.dna')[0], sequence_file, overwrite_existing)
     except:
         print('Snapgene file conversion error', dna_file)
         ret_val = 0
     return ret_val
             
-def import_plasmid_gbk(gbk_file, overwrite_existing):
+def import_plasmid_fasta(fna_file, sequence_file, overwrite_existing):
+    print('Working on FASTA file', fna_file)
+    records = SeqIO.parse(fna_file, "fasta")
+    filename = fna_file.split('/')[-1]
+    try:
+        ret_val = import_seq_records(records, '.'.join(filename.split('.')[:-1]), sequence_file, overwrite_existing)
+    except:
+        print('FASTA file conversion error', fna_file)
+        ret_val = 0
+    return ret_val
+            
+def import_plasmid_gbk(gbk_file, sequence_file, overwrite_existing):
     print('Working on GenBank file', gbk_file)
     if gbk_file.endswith('.gz'):
         gbk_handle = gzip.open(gbk_file, 'rt')
@@ -202,7 +220,7 @@ def import_plasmid_gbk(gbk_file, overwrite_existing):
         gbk_handle = open(gbk_file, 'r')
     records = SeqIO.parse(gbk_handle, "genbank")
     filename = gbk_file.split('/')[-1]
-    ret_val = import_seq_records(records, '.'.join(filename.split('.')[:-1]), overwrite_existing)
+    ret_val = import_seq_records(records, '.'.join(filename.split('.')[:-1]), sequence_file, overwrite_existing)
     gbk_handle.close()
     return ret_val
 
@@ -214,18 +232,23 @@ def update_plasmids(work_dir, overwrite_existing):
             continue
         print(files)
         for filename in files:
+            filepath = os.path.join(root, filename)
             if filename.endswith('.dna'):
-                obj_count += import_plasmid_snapgene(os.path.join(root, filename), overwrite_existing)
-            if filename.endswith('.gb') or filename.endswith('.ape'):
-                obj_count += import_plasmid_gbk(os.path.join(root, filename), overwrite_existing)
-            if filename.endswith('.xlsx'):
-                import_plasmids_table(os.path.join(root, filename), overwrite_existing)
+                obj_count += import_plasmid_snapgene(filepath, filepath.split(work_dir)[-1], overwrite_existing)
+            elif filename.endswith('.gb') or filename.endswith('.ape'):
+                obj_count += import_plasmid_gbk(filepath, filepath.split(work_dir)[-1], overwrite_existing)
+            elif filename.endswith('.xlsx'):
+                import_plasmids_table(filepath, overwrite_existing)
+            elif filename.endswith('.fa') or filename.endswith('.fna'):
+                obj_count += import_plasmid_fasta(filepath, filepath.split(work_dir)[-1], overwrite_existing)
     print(obj_count, 'plasmids created and/or updated')
 
     
 def create_plasmid(plasmid_name, plasmid_data):
     amd_number = ''
     description = ''
+    sequence = ''
+    footprint = hashlib.md5(sequence.encode('utf-8')).hexdigest()
     if 'AMD number' in plasmid_data:
         amd_number = plasmid_data['AMD number']
     if 'Description' in plasmid_data:
@@ -233,7 +256,9 @@ def create_plasmid(plasmid_name, plasmid_data):
     plasmid_obj = Plasmid.objects.create(
         name = plasmid_name,
         amd_number = amd_number,
-        description = description
+        description = description,
+        sequence = sequence,
+        footprint = footprint
     )
     if 'Magic pool part type' in plasmid_data:
         existing_parts = {item.name:item for item in Magic_pool_part.objects.all()}
@@ -276,7 +301,7 @@ def create_plasmid(plasmid_name, plasmid_data):
 def import_plasmids_table(xlsx_path, overwrite_existing=False):
     print(xlsx_path)
     xlsx_path = Path(xlsx_path)
-    wb_obj = openpyxl.load_workbook(xlsx_path)
+    wb_obj = openpyxl.load_workbook(xlsx_path, data_only=True)
     sheet = wb_obj.active
     xlsx_header = []
     data_imported = defaultdict(dict)
@@ -295,7 +320,7 @@ def import_plasmids_table(xlsx_path, overwrite_existing=False):
         print(created_count, 'new plasmids created')
         return
     for plasmid_name, plasmid_data in data_imported.items():
-        try:
+        if Plasmid.objects.filter(name=plasmid_name).exists():
             plasmid = Plasmid.objects.get(name=plasmid_name)
             if not overwrite_existing:
                 continue
@@ -348,13 +373,13 @@ def import_plasmids_table(xlsx_path, overwrite_existing=False):
                             param = key,
                             value = value
                             )
-        except Plasmid.DoesNotExist:
+        else:
             created_count += create_plasmid(plasmid_name, plasmid_data)
     print(created_count, 'new plasmids created')
 
 def import_magic_pool(xlsx_path):
     xlsx_path = Path(xlsx_path)
-    wb_obj = openpyxl.load_workbook(xlsx_path, data_only = True)
+    wb_obj = openpyxl.load_workbook(xlsx_path, data_only=True)
     sheet = wb_obj.get_sheet_by_name('part_names_overlaps')
     xlsx_header = []
     created_count = 0
@@ -519,7 +544,7 @@ def create_strain(amd_number, strain_data):
 def import_strains_table(xlsx_path, overwrite_existing=False):
     print(xlsx_path)
     xlsx_path = Path(xlsx_path)
-    wb_obj = openpyxl.load_workbook(xlsx_path)
+    wb_obj = openpyxl.load_workbook(xlsx_path, data_only=True)
     created_count = 0
     for sheet in wb_obj.worksheets:
         print('Working on ' + sheet.title)

@@ -51,6 +51,12 @@
             </header>
 			<h5 class="align-center"><a href="{% url 'partdetails' part_id=plasmid.magic_pool_part.id  %}">{{ plasmid.magic_pool_part }}</a></h5>
 		    {% endif %}
+			{% if plasmid.sequence_file %}
+            <header class="align-center">
+              <p class="align-center">Source file</p>
+            </header>
+			<h5 class="align-center">{{ plasmid.sequence_file }}</h5>
+		    {% endif %}
           </div>
           <div class="content">
             <header class="align-center">

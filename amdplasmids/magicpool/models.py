@@ -151,6 +151,8 @@ class Plasmid(models.Model):
     vector = models.ForeignKey(Vector, on_delete=models.SET_NULL, blank=True, null=True)
     magic_pool_part = models.ForeignKey(Magic_pool_part, on_delete=models.SET_NULL, blank=True, null=True)
     contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, blank=True, null=True)
+    sequence_file = models.CharField(max_length=255, blank=True)
+    footprint = models.CharField(max_length=32)
 
     def __str__(self):
         return self.name
