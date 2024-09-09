@@ -18,7 +18,7 @@ class Command(BaseCommand):
         )
     def handle(self, *args, **options):
         if options['i'] == '':
-            xlsx_path = '/mnt/data/work/Plasmids/datafiles/plasmid_maps/All_plasmids_Oct19_2023.xlsx'
+            xlsx_path = '/mnt/data/work/Plasmids/datafiles/plasmid_maps/All_plasmids_Sept6_2024.xlsx'
         else:
             xlsx_path = options['i']
         import_plasmids_table(xlsx_path)

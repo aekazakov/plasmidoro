@@ -57,10 +57,10 @@
 			<tbody>
 			  {% for item in vector_parts %}
 				<tr>
-				  <td><a href="{% url 'partdetails' part_id=item.part.id  %}"><strong>{{ item.part.name }}</strong></a></td>
-				  <td>{{ item.part.description }}</td>
-                  <td style="color:black;background-color:{{ item.part.upstream_overhang.color }}">{{ item.part.upstream_overhang }}</td>
-                  <td style="color:black;background-color:{{ item.part.downstream_overhang.color }}">{{ item.part.downstream_overhang }}</td>
+				  <td><a href="{% url 'partdetails' part_id=item.part_type.id  %}"><strong>{{ item.part_type.name }}</strong></a></td>
+				  <td>{{ item.part_type.description }}</td>
+                  <td style="color:black;background-color:{{ item.part_type.upstream_overhang.color }}">{{ item.part_type.upstream_overhang }}</td>
+                  <td style="color:black;background-color:{{ item.part_type.downstream_overhang.color }}">{{ item.part_type.downstream_overhang }}</td>
 				</tr>
 			  {% endfor %}
 			</tbody>
@@ -68,6 +68,31 @@
 		</div>
 		{% endif %}
 		
+        <header class="align-center">
+          <h2>Magic pools</h2>
+        </header>
+		{% if magic_pools %}
+		<div class="table-wrapper">
+		  <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Antibiotic resistance</th>
+              </tr>
+            </thead>
+			<tbody>
+			  {% for item in magic_pools %}
+				<tr>
+                  <td><a href="{% url 'magicpooldetails' magicpool_id=item.id  %}">{{ item.name }}</a></td>
+                  <td>{{ item.description }}</td>
+                  <td>{{ item.antibiotic_resistance }}</td>
+				</tr>
+			  {% endfor %}
+			</tbody>
+		  </table>
+		</div>
+		{% endif %}
 	  </div>
     </section>
 {% endblock %}

@@ -69,8 +69,8 @@ def part_detail(request, part_id):
     context = {
         'site_title':part.name,
         'part':part,
-        'info':Magic_pool_part_type_info.objects.filter(magic_pool_part=part_id),
-        'vectors':Vector_type.objects.filter(vector_part__part__id=part_id),
+        'info':Magic_pool_part_type_info.objects.filter(magic_pool_part_type=part_id),
+        'vectors':Vector_type.objects.filter(vector_type_part__id=part_id),
         'plasmids':Plasmid.objects.filter(magic_pool_part__id=part_id)
         }
     return HttpResponse(template.render(context, request))
@@ -80,14 +80,15 @@ def magicpool_detail(request, magicpool_id):
     '''
         Displays magic pool page
     '''
-    template = loader.get_template('magicpool/magicpool_detail.html')
+    template = loader.get_template('magicpool/magicpool.html')
     magicpool = Magic_pool.objects.get(id=magicpool_id)
     context = {
         'site_title':magicpool.name,
         'magicpool':magicpool,
-        'vector_type':Vector.objects.filter(id=magicpool.vector_type.id),
-        'plasmids':Plasmid.objects.filter(magic_pool=magicpool)
+        'vector_type':Vector_type.objects.filter(id=magicpool.vector_type.id)
         }
+    if Plasmid.objects.filter(magic_pools=magicpool).exists():
+        context['magic_pool_parts'] = Plasmid.objects.filter(magic_pools=magicpool).select_related('magic_pool_part').order_by('magic_pool_part__name', 'magic_pool_designation')
     return HttpResponse(template.render(context, request))
 
 
@@ -99,11 +100,14 @@ def vector_detail(request, vector_id):
     vector = Vector_type.objects.get(id=vector_id)
     img_path = os.path.join(STATICFILES_DIRS[0], 'vectors', vector.name + '.png')
     context = {'vector':vector,
-        'info':Vector_type_info.objects.filter(vector=vector_id),
-        'vector_parts':Vector_type_part.objects.filter(vector=vector_id).select_related('part'),
+        'info':Vector_type_info.objects.filter(vector_type=vector_id),
+        'vector_parts':Vector_type_part.objects.filter(vector_type=vector_id).select_related('part_type'),
         }
+    if Magic_pool.objects.filter(vector_type=vector_id).exists():
+        context['magic_pools'] = Magic_pool.objects.filter(vector_type=vector_id)
     if os.path.exists(img_path):
         context['img'] = STATIC_URL + '/vectors/' + vector.name + '.png'
+        
     return HttpResponse(template.render(context, request))
 
     

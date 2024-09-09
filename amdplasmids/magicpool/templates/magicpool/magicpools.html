@@ -1,12 +1,12 @@
 {% extends "base_generic.html" %}
 {% load static %}
 {% load my_tags %}
-{% block page-title %}<title>Vector types</title>{% endblock %}
+{% block page-title %}<title>Magic pools</title>{% endblock %}
 {% block script-header %}
 {% endblock %}
 
 
-{% block title %}<div class="logo"><h2>Vector types</h2></div>{% endblock %}
+{% block title %}<div class="logo"><h2>Magic pools</h2></div>{% endblock %}
 {% block content %}
     <section id="two" class="wrapper style3">
       <div class="inner">
@@ -16,7 +16,7 @@
           {% else %}
             <form action="{% url 'textsearch' %}" method="get">
               <input name="query" type="text" placeholder="Quick search by name or description...">
-              <input type="hidden" name="type" id="type" value="vector">
+              <input type="hidden" name="type" id="type" value="magicpool">
             </form>
           {% endif %}
           {% if external %}
@@ -29,15 +29,15 @@
               <tr>
                 <th>Name</th>
                 <th>Description</th>
-                <th>Parts</th>
+                <th>Antibiotic resistance</th>
               </tr>
             </thead>
             <tbody>
               {% for item in itemlist %}
                 <tr>
-                  <td><a href="{% url 'vectordetails' vector_id=item.id  %}">{{ item.name }}</a></td>
+                  <td><a href="{% url 'magicpooldetails' magicpool_id=item.id  %}">{{ item.name }}</a></td>
                   <td>{{ item.description }}</td>
-                  <td>{{ item.vector_part_set.all|length }}</td>
+                  <td>{{ item.antibiotic_resistance }}</td>
                 </tr>
               {% endfor %}
             </tbody>

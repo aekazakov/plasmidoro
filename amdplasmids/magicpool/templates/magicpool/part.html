@@ -70,6 +70,7 @@
             <thead>
               <tr>
                 <th>Plasmid</th>
+                <th>Designation</th>
                 <th>Size</th>
                 <th>Description</th>
               </tr>
@@ -78,6 +79,7 @@
 			  {% for item in plasmids %}
 				<tr>
 				  <td><a href="{% url 'plasmiddetails' plasmid_id=item.id  %}">{{ item.name }}</a></td>
+				  <td>{{ item.magic_pool_designation }}</td>
 				  <td>{{ item.sequence|length }}</td>
 				  <td>{{ item.description }}</td>
 				</tr>

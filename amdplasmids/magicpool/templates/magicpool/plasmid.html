@@ -49,7 +49,7 @@
             <header class="align-center">
               <p class="align-center">Magic pool part</p>
             </header>
-			<h5 class="align-center"><a href="{% url 'partdetails' part_id=plasmid.magic_pool_part.id  %}">{{ plasmid.magic_pool_part }}</a></h5>
+			<h5 class="align-center">{{ plasmid.magic_pool_designation }} [<a href="{% url 'partdetails' part_id=plasmid.magic_pool_part.id  %}">{{ plasmid.magic_pool_part }}</a>]</h5>
 		    {% endif %}
 			{% if plasmid.sequence_file %}
             <header class="align-center">

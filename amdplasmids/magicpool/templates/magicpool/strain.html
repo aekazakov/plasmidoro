@@ -73,7 +73,7 @@
 			  {% for item in plasmids %}
 				<tr>
 				  <td><a href="{% url 'plasmiddetails' plasmid_id=item.id  %}">{{ item.name }}</a></td>
-				  <td>{% if item.magic_pool_part %}{{ item.magic_pool_part.name }}{% endif %}</td>
+				  <td>{{ item.magic_pool_designation }} [{% if item.magic_pool_part %}<a href="{% url 'partdetails' part_id=item.magic_pool_part.id  %}">{{ item.magic_pool_part.name }}</a>{% endif %}]</td>
 				  <td>{{ item.sequence|length }}</td>
 				  <td>{{ item.description }}</td>
 				</tr>
