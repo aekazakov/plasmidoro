@@ -260,14 +260,18 @@ def create_plasmid(plasmid_name, plasmid_data):
         sequence = sequence,
         footprint = footprint
     )
+    if 'Magic pool part number' in plasmid_data:
+        plasmid_obj.magic_pool_designation = plasmid_data['Magic pool part number']
+        plasmid_obj.save()
+
     if 'Magic pool part type' in plasmid_data:
-        existing_parts = {item.name:item for item in Magic_pool_part.objects.all()}
+        existing_parts = {item.name:item for item in Magic_pool_part_type.objects.all()}
         part_name = plasmid_data['Magic pool part type']
         if part_name in existing_parts:
-            plasmid_obj.magic_pool_part = existing_parts[part_name]
+            plasmid_obj.magic_pool_part_type = existing_parts[part_name]
             plasmid_obj.save()
         else:
-            part_obj = Magic_pool_part.objects.create(
+            part_obj = Magic_pool_part_type.objects.create(
                 name = part_name,
                 description = '',
                 upstream_overhang = None,
@@ -289,7 +293,7 @@ def create_plasmid(plasmid_name, plasmid_data):
             plasmid_obj.drug_markers.add(marker_obj)
             plasmid_obj.save()
     for key, value in plasmid_data.items():
-        if key in ('AMD number', 'Description', 'Drug marker', 'Magic pool part type'):
+        if key in ('AMD number', 'Description', 'Drug marker', 'Magic pool part type', 'Magic pool part number'):
             continue
         plasmid_info_obj = Plasmid_info.objects.create(
             plasmid = plasmid_obj,
@@ -361,6 +365,10 @@ def import_plasmids_table(xlsx_path, overwrite_existing=False):
                         )
                         plasmid.magic_pool_part = part_obj
                         plasmid.save()
+                elif key == 'Magic pool part number':
+                    if value != plasmid.magic_pool_designation:
+                        plasmid.magic_pool_designation = value
+                        plasmid.save()
                 else:
                     if Plasmid_info.objects.filter(plasmid=plasmid.id,param=key).exists():
                         plasmid_info_obj = Plasmid_info.objects.get(plasmid=plasmid.id,param=key)
@@ -377,13 +385,13 @@ def import_plasmids_table(xlsx_path, overwrite_existing=False):
             created_count += create_plasmid(plasmid_name, plasmid_data)
     print(created_count, 'new plasmids created')
 
-def import_magic_pool(xlsx_path):
+def import_magic_pool_types(xlsx_path):
     xlsx_path = Path(xlsx_path)
     wb_obj = openpyxl.load_workbook(xlsx_path, data_only=True)
     sheet = wb_obj.get_sheet_by_name('part_names_overlaps')
     xlsx_header = []
     created_count = 0
-    existing_parts = {item.name:item for item in Magic_pool_part.objects.all()}
+    existing_parts = {item.name:item for item in Magic_pool_part_type.objects.all()}
     for i, row in enumerate(sheet.iter_rows()):
         if i == 0:
             xlsx_header = [cell.value for cell in row[1:]]
@@ -439,14 +447,14 @@ def import_magic_pool(xlsx_path):
                     sequence = downstream_overhang,
                     color = downstream_overhang_color
                     )
-            part_obj = Magic_pool_part.objects.create(
+            part_obj = Magic_pool_part_type.objects.create(
                 name = part_name,
                 description = description,
                 upstream_overhang = upstream_overhang_obj,
                 downstream_overhang = downstream_overhang_obj,
                 )
             for item in partinfo:
-                info_obj = Magic_pool_part_info.objects.create(
+                info_obj = Magic_pool_part_type_info.objects.create(
                     magic_pool_part = part_obj,
                     name = item[0],
                     description = item[1]
@@ -455,7 +463,7 @@ def import_magic_pool(xlsx_path):
 
     sheet = wb_obj.get_sheet_by_name('overview')
     xlsx_header = []
-    existing_vectors = {item.name:item for item in Vector.objects.all()}
+    existing_vectors = {item.name:item for item in Vector_type.objects.all()}
     current_vector_name = None
     current_description = ''
     magic_pool_parts = []
@@ -468,19 +476,19 @@ def import_magic_pool(xlsx_path):
             cell_c = str(row[2])
             if cell_a != '' and cell_a != 'None' and cell_a is not None:
                 if current_vector_name is not None and current_vector_name not in existing_vectors:
-                        vector_obj = Vector.objects.create(
+                        vector_obj = Vector_type.objects.create(
                             name = current_vector_name,
                             description = current_description
                         )
                         for item_index, item in enumerate(magic_pool_parts):
                             try:
-                                magic_pool_part_obj = Magic_pool_part.objects.get(name=item)
-                                vector_part_obj = Vector_part.objects.create(
+                                magic_pool_part_obj = Magic_pool_part_type.objects.get(name=item)
+                                vector_part_obj = Vector_part_type.objects.create(
                                     vector = vector_obj,
                                     part = magic_pool_part_obj,
                                     order = item_index
                                 )
-                            except Magic_pool_part.DoesNotExist:
+                            except Magic_pool_part_type.DoesNotExist:
                                 print(item, ' NOT FOUND IN MAGIC POOL PARTS')
                 magic_pool_parts = []
                 current_vector_name = cell_a
@@ -490,20 +498,92 @@ def import_magic_pool(xlsx_path):
                 magic_pool_parts.append(cell_c)
     if magic_pool_parts and current_vector_name is not None:
         if current_vector_name not in existing_vectors:
-            vector_obj = Vector.objects.create(
+            vector_obj = Vector_type.objects.create(
                 name = current_vector_name,
                 description = current_description
             )
             for item_index, item in enumerate(magic_pool_parts):
-                try:
-                    magic_pool_part_obj = Magic_pool_part.objects.get(name=item)
-                    vector_part_obj = Vector_part.objects.create(
+                if Magic_pool_part_type.objects.filter(name=item).exist():
+                    magic_pool_part_obj = Magic_pool_part_type.objects.get(name=item)
+                    vector_part_obj = Vector_part_type.objects.create(
                         vector = vector_obj,
                         part = magic_pool_part_obj,
                         order = item_index
                     )
-                except Magic_pool_part.DoesNotExist:
+                else:
                     print(item, ' NOT FOUND IN MAGIC POOL PARTS')
+
+
+def create_magic_pool(magic_pool_rows, existing_magic_pools):
+    name = ''
+    description = ''
+    antibiotic_resistance = ''
+    vector_type_name = ''
+    plasmids = {}
+    for row in magic_pool_rows:
+        if row[0] == 'Magic_Pool_Name':
+            name = row[1]
+        elif row[0] == 'Description':
+            description = row[1]
+        elif row[0] == 'Antibiotic resistance':
+            antibiotic_resistance = row[1]
+        elif row[0] == 'Magic Pool Vector Type':
+            vector_type_name = row[1]
+        elif row[0] == 'Part_Vector':
+            continue
+        else:
+            plasmids[row[1]] = (row[0], row[2])
+    if name == '':
+        return 0
+    if name in existing_magic_pools:
+        return 0
+    magic_pool = Magic_pool.objects.create(
+        name = name,
+        description = description,
+        antibiotic_resistance = antibiotic_resistance
+        )
+    if Vector_type.objects.filter(name=vector_type_name).exist():
+        magic_pool.vector_type = Vector_type.objects.get(name=vector_type_name)
+        magic_pool.save()
+    else:
+        print(vector_type_name, 'not found in vector types')
+    # Update plasmids
+    for plasmid_name in plasmids.keys():
+        if plasmid_name = '' or plasmid_name is None:
+            continue
+        if Plasmid.objects.filter(name=plasmid_name).exist():
+            plasmid = Plasmid.objects.get(name=plasmid_name)
+            plasmid_designation = plasmids[plasmid_name][2]
+            if plasmid.magic_pool_designation != plasmid_designation:
+                print('Magic pool designation is not consistent:', plasmid_designation, plasmid.magic_pool_designation)
+                raise ValueError('Update list of plasmids first')
+            magic_pool_part_type = plasmids[plasmid_name][0]
+            if plasmid.magic_pool_part.name != magic_pool_part_type:
+                print('Magic pool part type is not consistent:', magic_pool_part_type, plasmid.magic_pool_part.name)
+                raise ValueError('Update list of plasmids first')
+            plasmid.magic_pools.add(magic_pool)
+            plasmid.save()
+        else:
+            print(plasmid_name, 'not found in plasmids')
+    return 1
+            
+
+def import_magic_pools(xlsx_path):
+    xlsx_path = Path(xlsx_path)
+    wb_obj = openpyxl.load_workbook(xlsx_path, data_only=True)
+    sheet = wb_obj.get_sheet_by_name('magic_pool_summary')
+    magic_pool_rows = []
+    created_count = 0
+    existing_magic_pools = {item.name:item for item in Magic_pool.objects.all()}
+    for i, row in enumerate(sheet.iter_rows()):
+        key = row[0].value
+        if key == 'Magic_Pool_Name' and magic_pool_rows:
+            created_count += create_magic_pool(magic_pool_rows, existing_magic_pools)
+            magic_pool_rows = []
+        magic_pool_rows.append((row[0].value, row[1].value, row[2].value))
+    if magic_pool_rows:
+        created_count += create_magic_pool(magic_pool_rows, existing_magic_pools)
+    print(created_count, 'new magic pools created')
 
 
 def create_strain(amd_number, strain_data):

@@ -48,7 +48,7 @@ class Oligo_info(models.Model):
         return self.oligo.name + ':' + self.param
 
 
-class Magic_pool_part(models.Model):
+class Magic_pool_part_type(models.Model):
     '''
         magic pool part from the magic_pool_design spreadsheet
     '''
@@ -61,11 +61,11 @@ class Magic_pool_part(models.Model):
         return self.name
 
 
-class Magic_pool_part_info(models.Model):
+class Magic_pool_part_type_info(models.Model):
     '''
         unstructured information about magic pool parts from the magic_pool_design spreadsheet
     '''
-    magic_pool_part = models.ForeignKey(Magic_pool_part, on_delete=models.CASCADE)
+    magic_pool_part_type = models.ForeignKey(Magic_pool_part_type, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     description = models.TextField()
 
@@ -73,7 +73,7 @@ class Magic_pool_part_info(models.Model):
         return self.magic_pool_part.name + ': ' +  self.name
 
 
-class Vector(models.Model):
+class Vector_type(models.Model):
     '''
         Describes design of a magic pool vector
         
@@ -85,28 +85,28 @@ class Vector(models.Model):
         return self.name
 
 
-class Vector_part(models.Model):
+class Vector_type_part(models.Model):
     '''
         ordered list of vector parts
     '''
-    vector = models.ForeignKey(Vector, on_delete=models.CASCADE)
-    part = models.ForeignKey(Magic_pool_part, on_delete=models.CASCADE)
+    vector_type = models.ForeignKey(Vector_type, on_delete=models.CASCADE)
+    part_type = models.ForeignKey(Magic_pool_part_type, on_delete=models.CASCADE)
     order = models.PositiveIntegerField()
 
     class Meta:
         ordering = ['order']
-        unique_together = ('vector', 'order',)
+        unique_together = ('vector_type', 'order',)
 
     def __str__(self):
         return str(self.order) + ': ' + self.part.name
 
 
-class Vector_info(models.Model):
+class Vector_type_info(models.Model):
     '''
         unstructured information about a vector
         
     '''
-    vector = models.ForeignKey(Vector, on_delete=models.CASCADE)
+    vector_type = models.ForeignKey(Vector_type, on_delete=models.CASCADE)
     param = models.CharField(max_length=255)
     value = models.CharField(max_length=255)
 
@@ -138,6 +138,19 @@ class Drug_marker(models.Model):
         return self.name
 
 
+class Magic_pool(models.Model):
+    '''
+        magic pool vector from the magic_pool_summary spreadsheet
+    '''
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True)
+    vector_type = models.ForeignKey(Vector_type, on_delete=models.SET_NULL, blank=True, null=True)
+    antibiotic_resistance = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Plasmid(models.Model):
     '''
         stores information about plasmids from the All_plasmids_Oct19_2023
@@ -148,8 +161,9 @@ class Plasmid(models.Model):
     description = models.TextField(blank=True)
     sequence = models.TextField(blank=True)
     drug_markers = models.ManyToManyField(Drug_marker)
-    vector = models.ForeignKey(Vector, on_delete=models.SET_NULL, blank=True, null=True)
-    magic_pool_part = models.ForeignKey(Magic_pool_part, on_delete=models.SET_NULL, blank=True, null=True)
+    magic_pool_designation = models.CharField(max_length=255, blank=True)
+    magic_pools = models.ManyToManyField(Magic_pool)
+    magic_pool_part = models.ForeignKey(Magic_pool_part_type, on_delete=models.SET_NULL, blank=True, null=True)
     contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, blank=True, null=True)
     sequence_file = models.CharField(max_length=255, blank=True)
     footprint = models.CharField(max_length=32)

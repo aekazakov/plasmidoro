@@ -65,13 +65,28 @@ def part_detail(request, part_id):
         Displays magic pool part page
     '''
     template = loader.get_template('magicpool/part.html')
-    part = Magic_pool_part.objects.get(id=part_id)
+    part = Magic_pool_part_type.objects.get(id=part_id)
     context = {
         'site_title':part.name,
         'part':part,
-        'info':Magic_pool_part_info.objects.filter(magic_pool_part=part_id),
-        'vectors':Vector.objects.filter(vector_part__part__id=part_id),
+        'info':Magic_pool_part_type_info.objects.filter(magic_pool_part=part_id),
+        'vectors':Vector_type.objects.filter(vector_part__part__id=part_id),
         'plasmids':Plasmid.objects.filter(magic_pool_part__id=part_id)
+        }
+    return HttpResponse(template.render(context, request))
+
+
+def magicpool_detail(request, magicpool_id):
+    '''
+        Displays magic pool page
+    '''
+    template = loader.get_template('magicpool/magicpool_detail.html')
+    magicpool = Magic_pool.objects.get(id=magicpool_id)
+    context = {
+        'site_title':magicpool.name,
+        'magicpool':magicpool,
+        'vector_type':Vector.objects.filter(id=magicpool.vector_type.id),
+        'plasmids':Plasmid.objects.filter(magic_pool=magicpool)
         }
     return HttpResponse(template.render(context, request))
 
@@ -81,11 +96,11 @@ def vector_detail(request, vector_id):
         Displays vector design page
     '''
     template = loader.get_template('magicpool/vector.html')
-    vector = Vector.objects.get(id=vector_id)
+    vector = Vector_type.objects.get(id=vector_id)
     img_path = os.path.join(STATICFILES_DIRS[0], 'vectors', vector.name + '.png')
     context = {'vector':vector,
-        'info':Vector_info.objects.filter(vector=vector_id),
-        'vector_parts':Vector_part.objects.filter(vector=vector_id).select_related('part'),
+        'info':Vector_type_info.objects.filter(vector=vector_id),
+        'vector_parts':Vector_type_part.objects.filter(vector=vector_id).select_related('part'),
         }
     if os.path.exists(img_path):
         context['img'] = STATIC_URL + '/vectors/' + vector.name + '.png'
@@ -139,7 +154,7 @@ def parts(request):
     '''
     template = loader.get_template('magicpool/parts.html')
     context = {
-        'itemlist':Magic_pool_part.objects.order_by('name')
+        'itemlist':Magic_pool_part_type.objects.order_by('name')
         }
     return HttpResponse(template.render(context, request))
 
@@ -150,7 +165,19 @@ def vectors(request):
     '''
     template = loader.get_template('magicpool/vectors.html')
     context = {
-        'itemlist':Vector.objects.order_by('name')
+        'itemlist':Vector_type.objects.order_by('name')
+        }
+    print(context)
+    return HttpResponse(template.render(context, request))
+
+
+def magicpools(request):
+    '''
+        Displays list of Magic Pools
+    '''
+    template = loader.get_template('magicpool/magicpools.html')
+    context = {
+        'itemlist':Magic_pool.objects.order_by('name')
         }
     print(context)
     return HttpResponse(template.render(context, request))
@@ -326,13 +353,13 @@ def textsearch(request):
             }
     elif type == 'part':
         if query:
-            object_list = Magic_pool_part.objects.filter(
+            object_list = Magic_pool_part_type.objects.filter(
                     (Q(name__icontains=query) |
                     Q(description__icontains=query))
                 ).distinct().order_by('name')
         else:
             query = ''
-            object_list = Magic_pool_part.objects.none()
+            object_list = Magic_pool_part_type.objects.none()
         template = loader.get_template('magicpool/parts.html')
         context={
             'site_title':'Magic pool part search results',
@@ -341,16 +368,32 @@ def textsearch(request):
             }
     elif type == 'vector':
         if query:
-            object_list = Vector.objects.filter(
+            object_list = Vector_type.objects.filter(
                     (Q(name__icontains=query) |
                     Q(description__icontains=query))
                 ).distinct().order_by('name')
         else:
             query = ''
-            object_list = Vector.objects.none()
+            object_list = Vector_type.objects.none()
         template = loader.get_template('magicpool/vectors.html')
         context={
             'site_title':'Vector search results',
+            'itemlist':object_list,
+            'searchcontext':query
+            }
+    elif type == 'magicpool':
+        if query:
+            object_list = Magic_pool.objects.filter(
+                    (Q(name__icontains=query) |
+                    Q(description__icontains=query) |
+                    Q(antibiotic_resistance__icontains=query))
+                ).distinct().order_by('name')
+        else:
+            query = ''
+            object_list = Magic_pool.objects.none()
+        template = loader.get_template('magicpool/magicpools.html')
+        context={
+            'site_title':'Magic pool search results',
             'itemlist':object_list,
             'searchcontext':query
             }
