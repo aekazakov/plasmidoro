@@ -583,8 +583,24 @@ def import_magic_pools(xlsx_path):
         magic_pool_rows.append((row[0].value, row[1].value, row[2].value))
     if magic_pool_rows:
         created_count += create_magic_pool(magic_pool_rows, existing_magic_pools)
-    print(created_count, 'new magic pools created')
 
+    sheet = wb_obj.get_sheet_by_name('magic_pool_strainID')
+    existing_magic_pools = {item.name:item for item in Magic_pool.objects.all()}
+    for i, row in enumerate(sheet.iter_rows()):
+        strain_amd = row[0].value
+        magic_pool_name = row[2].value
+        if magic_pool_name == 'Magic Pool Plasmid ID':
+            continue
+        if magic_pool_name == '' or magic_pool_name is None:
+            continue
+        if magic_pool_name not in existing_magic_pools:
+            raise ValueError(magic_pool_name, 'magic pool from magic_pool_summary not found')
+        if Strain.objects.filter(amd_number=strain_amd).exists():
+            existing_magic_pools[magic_pool_name].strain = Strain.objects.get(amd_number=strain_amd)
+            existing_magic_pools[magic_pool_name].save()
+        else:
+            print(strain_amd, 'strain from not magic_pool_summary found')
+    print(created_count, 'new magic pools created')
 
 def create_strain(amd_number, strain_data):
     species = ''

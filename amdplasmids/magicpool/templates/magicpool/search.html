@@ -21,12 +21,12 @@
 				</form>
               </p>
               <header class="align-center">
-                <h4>Search in vector designs</h4>
+                <h4>Search in magic pools</h4>
               </header>
               <p>
 				<form action="{% url 'textsearch' %}" method="get">
 				  <input name="query" type="text" placeholder="Search by name or description...">
-				  <input type="hidden" name="type" id="type" value="vector">
+				  <input type="hidden" name="type" id="type" value="magicpool">
 				</form>
               </p>
               <header class="align-center">
@@ -36,6 +36,15 @@
 				<form action="{% url 'textsearch' %}" method="get">
 				  <input name="query" type="text" placeholder="Search by name or description...">
 				  <input type="hidden" name="type" id="type" value="part">
+				</form>
+              </p>
+              <header class="align-center">
+                <h4>Search in vector types</h4>
+              </header>
+              <p>
+				<form action="{% url 'textsearch' %}" method="get">
+				  <input name="query" type="text" placeholder="Search by name or description...">
+				  <input type="hidden" name="type" id="type" value="vector">
 				</form>
               </p>
               <header class="align-center">

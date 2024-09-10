@@ -23,6 +23,7 @@
             </header>
 			<h5 class="align-center">Antibiotic resistance: <strong>{{ magicpool.antibiotic_resistance }}</strong></h5>
 			<h5 class="align-center">Vector type: <strong><a href="{% url 'vectordetails' vector_id=magicpool.vector_type.id  %}">{{ magicpool.vector_type.name }}</a></strong></h5>
+			<h5 class="align-center">Strain: <strong><a href="{% url 'straindetails' strain_id=magicpool.strain.id  %}">{{ magicpool.strain.amd_number }}</a></strong></h5>
           </div>
         </div>
         <header class="align-center">
@@ -33,8 +34,8 @@
 		  <table>
             <thead>
               <tr>
-                <th>Part type</th>
-                <th>Plasmid</th>
+                <th>Type</th>
+                <th>Part/plasmid</th>
                 <th>5' overhang</th>
                 <th>3' overhang</th>
               </tr>
@@ -43,7 +44,7 @@
 			  {% for item in magic_pool_parts %}
 				<tr>
 				  <td><a href="{% url 'partdetails' part_id=item.magic_pool_part.id  %}"><strong>{{ item.magic_pool_part.name }}</strong></a></td>
-				  <td>{{ item.magic_pool_designation }} [{{ item.amd_number }}]</td>
+				  <td><a href="{% url 'plasmiddetails' plasmid_id=item.id  %}">{{ item.magic_pool_designation }} [{{ item.name }}/{{ item.amd_number }}]</a></td>
                   <td style="color:black;background-color:{{ item.magic_pool_part.upstream_overhang.color }}">{{ item.magic_pool_part.upstream_overhang }}</td>
                   <td style="color:black;background-color:{{ item.magic_pool_part.downstream_overhang.color }}">{{ item.magic_pool_part.downstream_overhang }}</td>
 				</tr>
