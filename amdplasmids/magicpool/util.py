@@ -602,6 +602,7 @@ def import_magic_pools(xlsx_path):
             print(strain_amd, 'strain from not magic_pool_summary found')
     print(created_count, 'new magic pools created')
 
+
 def create_strain(amd_number, strain_data):
     species = ''
     description = ''
@@ -702,6 +703,87 @@ def import_strains_table(xlsx_path, overwrite_existing=False):
     print(created_count, 'new strains created')
 
 
+def create_oligo(name, oligo_data):
+    sequence = ''
+    description = ''
+    if 'Sequence' in oligo_data:
+        sequence = oligo_data['Sequence']
+    if 'Purpose' in oligo_data:
+        description = oligo_data['Purpose']
+    oligo_obj = Oligo.objects.create(
+        name = name,
+        sequence = sequence,
+        description = description
+    )
+    for key, value in oligo_data.items():
+        if key in ('Sequence', 'Purpose'):
+            continue
+        if key == '' or key is None:
+            continue
+        if value == '' or value is None:
+            continue
+        oligo_info_obj = Oligo_info.objects.create(
+            oligo = oligo_obj,
+            param = key,
+            value = value
+        )
+    return 1
+
+
+def import_oligos_table(xlsx_path, overwrite_existing=False):
+    print(xlsx_path)
+    xlsx_path = Path(xlsx_path)
+    wb_obj = openpyxl.load_workbook(xlsx_path, data_only=True)
+    created_count = 0
+    for sheet in wb_obj.worksheets:
+        print('Working on ' + sheet.title)
+        xlsx_header = []
+        data_imported = defaultdict(dict)
+        for i, row in enumerate(sheet.iter_rows(values_only=True)):
+            if i == 0:
+                xlsx_header = row
+            else:
+                name = str(row[0])
+                if name is None or name == '':
+                    continue
+                for j, cell in enumerate(row):
+                    if j == 0:
+                        continue
+                    if cell != '' and cell != 'None' and cell is not None:
+                        data_imported[name][xlsx_header[j]] = str(cell)
+        for name, oligo_data in data_imported.items():
+            if Oligo.objects.filter(name=name).exists():
+                oligo = Oligo.objects.get(name=name)
+                if not overwrite_existing:
+                    continue
+                for key,value in oligo_data.items():
+                    if key == 'Sequence':
+                        if oligo.sequence != value:
+                            oligo.sequence = value
+                            oligo.save()
+                    elif key == 'Purpose':
+                        if oligo.description != value:
+                            oligo.description = value
+                            oligo.save()
+                    elif key == '' or key is None:
+                        continue
+                    else:
+                        if Oligo_info.objects.filter(oligo=oligo.id,param=key).exists():
+                            oligo_info_obj = Oligo_info.objects.get(oligo=oligo.id,param=key)
+                            if oligo_info_obj.value != value:
+                                oligo_info_obj.value = value
+                                oligo_info_obj.save()
+                        elif value != '' and not value is None:
+                            Oligo_info.objects.create(
+                                oligo = oligo,
+                                param = key,
+                                value = value
+                                )
+            else:
+                print(oligo_data)
+                created_count += create_oligo(name, oligo_data)
+    print(created_count, 'new oligos created')
+
 def make_blast_databases():
     nucl_db_file = export_contigs()
     cmd = ['makeblastdb', '-dbtype', 'nucl', '-in',
@@ -745,7 +827,7 @@ def export_contigs():
             outfile.write('>' + str(item['id']) + '|' + item['name'] + '|plasmid|' + item['amd_number'] +
                           '\n' + item['sequence'] +
                           '\n')
-        for item in Oligo.objects.values('name', 'sequence'):
+        for item in Oligo.objects.values('id', 'name', 'sequence'):
             outfile.write('>' + str(item['id']) + '|' + item['name'] + '|oligo|' +
                           '\n' + item['sequence'] +
                           '\n')

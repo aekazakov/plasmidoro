@@ -17,6 +17,7 @@ urlpatterns = [
     path('vectors/', views.vectors, name='vectorslist'),
     path('magicpools/', views.magicpools, name='magicpoolslist'),
     path('strains/', views.strains, name='strainslist'),
+    path('oligos/', views.oligos, name='oligoslist'),
     path('nuclsearchform/',views.nucleotidesearchform,name="nucleotidesearchform"),
     path('nuclsearch/',views.nucleotidesearch,name="nucleotidesearch"),
     path('protsearchform/',views.proteinsearchform,name="proteinsearchform"),

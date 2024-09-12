@@ -199,6 +199,18 @@ def strains(request):
     return HttpResponse(template.render(context, request))
 
 
+def oligos(request):
+    '''
+        Displays list of oligos
+    '''
+    template = loader.get_template('magicpool/oligos.html')
+    context = {
+        'itemlist':Oligo.objects.order_by('name')
+        }
+    print(context)
+    return HttpResponse(template.render(context, request))
+    
+    
 def nucleotidesearchform(request):
     '''
         Displays nucleotide sequence search form
@@ -415,6 +427,22 @@ def textsearch(request):
         template = loader.get_template('magicpool/strains.html')
         context={
             'site_title':'Strain search results',
+            'itemlist':object_list,
+            'searchcontext':query
+            }
+    elif type == 'oligo':
+        if query:
+            object_list = Oligo.objects.filter(
+                    (Q(name__icontains=query) |
+                    Q(contact__name__icontains=query) |
+                    Q(description__icontains=query))
+                ).distinct().order_by('name')
+        else:
+            query = ''
+            object_list = Oligo.objects.none()
+        template = loader.get_template('magicpool/oligos.html')
+        context={
+            'site_title':'Oligonucleotide search results',
             'itemlist':object_list,
             'searchcontext':query
             }

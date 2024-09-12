@@ -12,36 +12,36 @@
         <div class="grid-style">
           <div class="content">
             <header class="align-center">
-              <p class="align-center">Sequence</p>
+              <p class="align-center">Description</p>
             </header>
-			<h5>{{ oligo.sequence }}</h5>
-          </div>
-          <div class="content">
+		<h5>{{ oligo.description }}</h5>
+
             <header class="align-center">
               <p class="align-center">Contact</p>
             </header>
-			<h5>{{ oligo.contact.name }}</h5>
+	    {% if oligo.contact %}
+		<h5>{{ oligo.contact.name }}</h5>
+	    {% else %}
+		<h5>No contact</h5>
+	    {% endif %}
+          </div>
+          <div class="content">
+            <header class="align-center">
+              <p class="align-center">Information</p>
+            </header>
+		{% if info %}
+		  {% for item in info %}
+		    <span><strong>{{ item.param }}</strong></span>
+		    <h5>{{ item.value }}</h5>
+		  {% endfor %}
+		{% endif %}
           </div>
         </div>
         <header class="align-center">
-          <h2>Information</h2>
+          <h2>Sequence</h2>
         </header>
-		{% if info %}
-		<div class="table-wrapper">
-		  <table>
-			<tbody>
-			  {% for item in info %}
-				<tr>
-				  <td><strong>{{ item.param }}</strong></td>
-				  <td>{{ item.value }}</td>
-				</tr>
-			  {% endfor %}
-			</tbody>
-		  </table>
-		</div>
-		{% endif %}
-		
-	  </div>
+	<textarea rows="8" cols="50">{{ oligo.sequence }}</textarea>
+      </div>
     </section>
 {% endblock %}
 

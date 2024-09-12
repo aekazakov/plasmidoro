@@ -1,15 +1,15 @@
 from django.core.management.base import BaseCommand
-from magicpool.util import import_strains_table
+from magicpool.util import import_oligos_table
 
 class Command(BaseCommand):
-    help = '''Imports or updates strain records from xlsx file
+    help = '''Imports or updates oligo records from xlsx file
     '''
 
     def add_arguments(self, parser):
         parser.add_argument(
             '-i',
             default='',
-            help='Strain spreadsheet path'
+            help='Oligos spreadsheet path'
         )
         parser.add_argument(
             '--overwrite',
@@ -18,7 +18,7 @@ class Command(BaseCommand):
         )
     def handle(self, *args, **options):
         if options['i'] == '':
-            xlsx_path = '/mnt/data/work/Plasmids/datafiles/strains.xlsx'
+            xlsx_path = '/mnt/data/work/Plasmids/datafiles/oligos.xlsx'
         else:
             xlsx_path = options['i']
-        import_strains_table(xlsx_path, options['overwrite'])
+        import_oligos_table(xlsx_path, options['overwrite'])
