@@ -105,6 +105,15 @@ def vector_detail(request, vector_id):
         }
     if Magic_pool.objects.filter(vector_type=vector_id).exists():
         context['magic_pools'] = Magic_pool.objects.filter(vector_type=vector_id)
+    
+    magic_pool_part_type_ids = Magic_pool_part_type.objects.filter(vector_type_part__vector_type__id=vector_id).values_list('id')
+    plasmids = Plasmid.objects.filter(magic_pool_part__in=magic_pool_part_type_ids)
+    context['plasmids'] = plasmids
+    #plasmid -> Magic_pool_part_type -> Vector_type_part -> Vector_type
+    
+    
+    
+    
     if os.path.exists(img_path):
         context['img'] = STATIC_URL + '/vectors/' + vector.name + '.png'
         
@@ -356,6 +365,7 @@ def textsearch(request):
             object_list = Plasmid.objects.filter(
                     (Q(name__icontains=query) |
                     Q(amd_number__icontains=query) |
+                    Q(magic_pool_designation__icontains=query) |
                     Q(description__icontains=query))
                 ).distinct().order_by('name')
         else:

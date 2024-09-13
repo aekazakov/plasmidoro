@@ -67,7 +67,7 @@
 		  </table>
 		</div>
 		{% endif %}
-		
+	<hr>
         <header class="align-center">
           <h2>Magic pools</h2>
         </header>
@@ -92,7 +92,44 @@
 			</tbody>
 		  </table>
 		</div>
+		{% else %}
+		<h5 class="align-center">No magic pools</h5>
 		{% endif %}
+	<hr>
+        <header class="align-center">
+          <h2>Availalbe plasmids</h2>
+        </header>
+		{% if plasmids %}
+		<div class="table-wrapper">
+		  <table>
+            <thead>
+              <tr>
+                <th>Plasmid</th>
+                <th>AMD number</th>
+                <th>Designation</th>
+                <th>Magic pool part</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+			<tbody>
+			  {% for item in plasmids %}
+				<tr>
+                  <td><a href="{% url 'plasmiddetails' plasmid_id=item.id  %}">{{ item.name }}</a></td>
+                  <td>{{ item.amd_number }}</td>
+                  <td>{{ item.magic_pool_designation }}</td>
+				{% if item.magic_pool_part %}
+                  <td>{{ item.magic_pool_part.name }}</td>
+		        {% else %}
+				  <td></td>
+		        {% endif %}
+                  <td>{{ item.description }}</td>
+				</tr>
+			  {% endfor %}
+			</tbody>
+		  </table>
+		</div>
+		{% endif %}
+
 	  </div>
     </section>
 {% endblock %}

@@ -63,7 +63,9 @@ def validate_params(params):
                                     '0.0001',
                                     '0.01',
                                     '1.0',
-                                    '10.0'
+                                    '10.0',
+                                    '100.0',
+                                    '1000.0'
                                     ]:
             raise SuspiciousOperation(
             "Unacceptable value '%s' for e-value parameter." % result['evalue']
@@ -198,6 +200,9 @@ def run_nucleotide_search(params):
         '-soft_masking', 'false',
         '-outfmt', '6'
         ]
+    if len(sequence) < 30:
+        args.append('-task')
+        args.append('blastn')
     with Popen(args,
                stdin=PIPE,
                stdout=PIPE,
@@ -207,6 +212,8 @@ def run_nucleotide_search(params):
                ) as p:
         blastoutput, err = p.communicate('>' + sequence_id + '\n' + sequence)
     if p.returncode != 0:
+        if err is None:
+            err = ['Execution error',]
         searchcontext = 'BLASTN finished with error:\n' + '\n'.join(err)
         print('BLASTN finished with error. Parameters: %s \n %s',
                      str(params), '\n'.join(err)
