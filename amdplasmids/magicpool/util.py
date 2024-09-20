@@ -12,6 +12,7 @@ from Bio import SeqIO
 from Bio import GenBank
 from subprocess import Popen, PIPE, CalledProcessError
 from magicpool.models import *
+from amdplasmids.settings import DATA_DIR
 
 def autovivify(levels=1, final=dict):
     return (defaultdict(final) if levels < 2 else
@@ -224,24 +225,110 @@ def import_plasmid_gbk(gbk_file, sequence_file, overwrite_existing):
     gbk_handle.close()
     return ret_val
 
-def update_plasmids(work_dir, overwrite_existing):
+
+def update_alldata():
+    if not os.path.exists(DATA_DIR):
+        print("Data directory does not exists: " + DATA_DIR)
+        return
+    else:
+        print("Data directory: " + DATA_DIR)
+    plasmid_maps_dir = os.path.join(DATA_DIR, 'plasmid_maps')
+    oligos_file = os.path.join(DATA_DIR, 'oligos.xlsx')
+    strains_file = os.path.join(DATA_DIR, 'strains.xlsx')
+    # Download files
+    if not os.path.exists(os.path.join(DATA_DIR, 'rclone.conf')):
+        raise FileNotFoundError('rclone.conf is missing')
+    with open(os.path.join(DATA_DIR, 'data_download.sh'), 'w') as outfile:
+        outfile.write('#!/usr/bin/bash\n')
+        outfile.write('cd '+ DATA_DIR + '\n')
+        outfile.write('rclone copyto --config ./rclone.conf "gdriveR:Deutschbauer_Lab_Documents/PLASMID_MAPS_2023_onward" --drive-shared-with-me ./plasmid_maps\n')
+        outfile.write('rclone copyto --config ./rclone.conf "gdriveR:Deutschbauer_Lab_Documents/AMD strain collection.xlsx" --drive-shared-with-me ./strains.xlsx\n')
+        outfile.write('rclone copyto --config ./rclone.conf "gdriveR:Deutschbauer_Lab_Documents/Oligos_and_gBlocks/oAD_oligos_and_gAD_gBlocks.xlsx" --drive-shared-with-me ./oligos.xlsx\n')
+    cmd = ['bash', os.path.join(DATA_DIR, 'data_download.sh')]
+    print(' '.join(cmd))
+    with Popen(cmd, stdout=PIPE, bufsize=1, universal_newlines=True) as proc:
+        for line in proc.stdout:
+            print(line.rstrip('\n\r'))
+    if proc.returncode != 0:
+        # Suppress false positive no-member error
+        # (see https://github.com/PyCQA/pylint/issues/1860)
+        # pylint: disable=no-member
+        raise CalledProcessError(proc.returncode, proc.args)
+    
+    if not os.path.exists(plasmid_maps_dir):
+        print("Data directory does not exists: " + plasmid_maps_dir)
+        return
+    else:
+        print("Plasmid data directory found: " + plasmid_maps_dir)
+    existing_plasmids_nomap = Plasmid.objects.filter(sequence_file='')
+    delete_objects = []
+    for plasmid in Plasmid.objects.exclude(sequence_file=''):
+        if not os.path.exists(os.path.join(plasmid_maps_dir, plasmid.sequence_file)):
+            print('File not found: ' + os.path.join(plasmid_maps_dir, plasmid.sequence_file))
+            print(plasmid.name + ' plasmid to be deleted')
+            delete_objects.append(plasmid)
+    if delete_objects:
+        for item in delete_objects:
+            item.delete()
+        delete_objects = []
+    plasmids_nomap = import_plasmids(plasmid_maps_dir, False)
+    for plasmid_obj in existing_plasmids_nomap:
+        if plasmid_obj.name not in plasmids_nomap:
+            print(plasmid.name + ' plasmid to be deleted')
+            delete_objects.append(plasmid)
+    if delete_objects:
+        for item in delete_objects:
+            item.delete()
+        delete_objects = []
+    
+    import_magic_pool_types(os.path.join(plasmid_maps_dir, 'magicpool_vector_designs', 'magic_pool_design.xlsx'))
+    import_magic_pools(os.path.join(plasmid_maps_dir, 'Magic_Pools', 'Magic_Pool_Summary_Sheet.xlsx'))
+
+    existing_oligos = Oligo.objects.all()
+    new_oligo_names = import_oligos_table(oligos_file)
+    delete_objects = []
+    for oligo_obj in existing_oligos:
+        if oligo_obj.name not in new_oligo_names:
+            print(oligo_obj.name + ' oligo to be deleted')
+            delete_objects.append(oligo_obj)
+    if delete_objects:
+        for item in delete_objects:
+            item.delete()
+        delete_objects = []
+    
+    existing_strains = Strain.objects.all()
+    new_strain_amd_numbers = import_strains_table(strains_file)
+    delete_objects = []
+    for strain_obj in existing_strains:
+        if strain_obj.amd_number not in new_strain_amd_numbers:
+            print(strain_obj.amd_number + ' strain to be deleted')
+            delete_objects.append(strain_obj)
+    if delete_objects:
+        for item in delete_objects:
+            item.delete()
+    make_blast_databases()
+
+
+def import_plasmids(work_dir, overwrite_existing):
     obj_count = 0
+    ret = []
     for root, subdirs, files in os.walk(work_dir):
         if 'Old_files' in root or 'Older_Files' in root:
             print('Skipping', root)
             continue
         print(files)
-        for filename in files:
+        for filename in sorted(files):
             filepath = os.path.join(root, filename)
             if filename.endswith('.dna'):
-                obj_count += import_plasmid_snapgene(filepath, filepath.split(work_dir)[-1], overwrite_existing)
+                obj_count += import_plasmid_snapgene(filepath, filepath.split(work_dir)[-1][1:], overwrite_existing)
             elif filename.endswith('.gb') or filename.endswith('.ape'):
-                obj_count += import_plasmid_gbk(filepath, filepath.split(work_dir)[-1], overwrite_existing)
+                obj_count += import_plasmid_gbk(filepath, filepath.split(work_dir)[-1][1:], overwrite_existing)
             elif filename.endswith('.xlsx'):
-                import_plasmids_table(filepath, overwrite_existing)
+                ret = ret + import_plasmids_table(filepath, overwrite_existing)
             elif filename.endswith('.fa') or filename.endswith('.fna'):
-                obj_count += import_plasmid_fasta(filepath, filepath.split(work_dir)[-1], overwrite_existing)
+                obj_count += import_plasmid_fasta(filepath, filepath.split(work_dir)[-1][1:], overwrite_existing)
     print(obj_count, 'plasmids created and/or updated')
+    return ret
 
     
 def create_plasmid(plasmid_name, plasmid_data):
@@ -304,6 +391,7 @@ def create_plasmid(plasmid_name, plasmid_data):
     
 def import_plasmids_table(xlsx_path, overwrite_existing=False):
     print(xlsx_path)
+    ret = []
     xlsx_path = Path(xlsx_path)
     wb_obj = openpyxl.load_workbook(xlsx_path, data_only=True)
     sheet = wb_obj.active
@@ -317,12 +405,13 @@ def import_plasmids_table(xlsx_path, overwrite_existing=False):
             plasmid_name = row[0]
             if plasmid_name == '' or plasmid_name is None:
                 continue
+            ret.append(plasmid_name)
             for j, cell in enumerate(row[1:]):
                 if cell != '' and cell != 'None' and cell is not None:
                     data_imported[plasmid_name][xlsx_header[j]] = str(cell)
     if 'AMD number' not in xlsx_header:
         print(created_count, 'new plasmids created')
-        return
+        return ret
     for plasmid_name, plasmid_data in data_imported.items():
         if Plasmid.objects.filter(name=plasmid_name).exists():
             plasmid = Plasmid.objects.get(name=plasmid_name)
@@ -384,6 +473,7 @@ def import_plasmids_table(xlsx_path, overwrite_existing=False):
         else:
             created_count += create_plasmid(plasmid_name, plasmid_data)
     print(created_count, 'new plasmids created')
+    return ret
 
 def import_magic_pool_types(xlsx_path):
     xlsx_path = Path(xlsx_path)
@@ -483,9 +573,9 @@ def import_magic_pool_types(xlsx_path):
                         for item_index, item in enumerate(magic_pool_parts):
                             try:
                                 magic_pool_part_obj = Magic_pool_part_type.objects.get(name=item)
-                                vector_part_obj = Vector_part_type.objects.create(
-                                    vector = vector_obj,
-                                    part = magic_pool_part_obj,
+                                vector_part_obj = Vector_type_part.objects.create(
+                                    vector_type = vector_obj,
+                                    part_type = magic_pool_part_obj,
                                     order = item_index
                                 )
                             except Magic_pool_part_type.DoesNotExist:
@@ -505,9 +595,9 @@ def import_magic_pool_types(xlsx_path):
             for item_index, item in enumerate(magic_pool_parts):
                 if Magic_pool_part_type.objects.filter(name=item).exists():
                     magic_pool_part_obj = Magic_pool_part_type.objects.get(name=item)
-                    vector_part_obj = Vector_part_type.objects.create(
-                        vector = vector_obj,
-                        part = magic_pool_part_obj,
+                    vector_part_obj = Vector_type_part.objects.create(
+                        vector_type = vector_obj,
+                        part_type = magic_pool_part_obj,
                         order = item_index
                     )
                 else:
@@ -640,6 +730,7 @@ def create_strain(amd_number, strain_data):
 
 def import_strains_table(xlsx_path, overwrite_existing=False):
     print(xlsx_path)
+    ret = []
     xlsx_path = Path(xlsx_path)
     wb_obj = openpyxl.load_workbook(xlsx_path, data_only=True)
     created_count = 0
@@ -654,6 +745,7 @@ def import_strains_table(xlsx_path, overwrite_existing=False):
                 amd_number = str(row[0])
                 if amd_number is None or not amd_number.startswith('AMD'):
                     continue
+                ret.append(amd_number)
                 for j, cell in enumerate(row):
                     if j == 0:
                         continue
@@ -701,6 +793,7 @@ def import_strains_table(xlsx_path, overwrite_existing=False):
             else:
                 created_count += create_strain(amd_number, strain_data)
     print(created_count, 'new strains created')
+    return ret
 
 
 def create_oligo(name, oligo_data):
@@ -735,6 +828,7 @@ def import_oligos_table(xlsx_path, overwrite_existing=False):
     xlsx_path = Path(xlsx_path)
     wb_obj = openpyxl.load_workbook(xlsx_path, data_only=True)
     created_count = 0
+    ret = []
     for sheet in wb_obj.worksheets:
         print('Working on ' + sheet.title)
         xlsx_header = []
@@ -746,6 +840,7 @@ def import_oligos_table(xlsx_path, overwrite_existing=False):
                 name = str(row[0])
                 if name is None or name == '':
                     continue
+                ret.append(name)
                 for j, cell in enumerate(row):
                     if j == 0:
                         continue
@@ -783,6 +878,8 @@ def import_oligos_table(xlsx_path, overwrite_existing=False):
                 print(oligo_data)
                 created_count += create_oligo(name, oligo_data)
     print(created_count, 'new oligos created')
+    return(ret)
+    
 
 def make_blast_databases():
     nucl_db_file = export_contigs()
