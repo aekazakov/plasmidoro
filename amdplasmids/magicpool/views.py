@@ -6,7 +6,9 @@ from django.db.models import Q
 from magicpool.models import *
 from magicpool.blast_search import run_protein_search
 from magicpool.blast_search import run_nucleotide_search
+from magicpool.export import export_plasmids
 from amdplasmids.settings import STATICFILES_DIRS, STATIC_URL
+
 
 def index(request):
 	#return HttpResponse("This is a start page.")
@@ -460,4 +462,7 @@ def textsearch(request):
         return HttpResponse("Not implemented.")
     return HttpResponse(template.render(context, request))
 
-    
+def export(request):
+    return_type = request.GET.get('return')
+    if return_type == 'plasmids':
+        return export_plasmids(request)

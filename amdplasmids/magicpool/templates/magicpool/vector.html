@@ -97,7 +97,7 @@
 		{% endif %}
 	<hr>
         <header class="align-center">
-          <h2>Availalbe plasmids</h2>
+          <h2>Availalbe plasmids <a href="{% url 'export' %}?return=plasmids&type=vector_id&query={{ vector.id }}">[export tsv]</a></h2>
         </header>
 		{% if plasmids %}
 		<div class="table-wrapper">

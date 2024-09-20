@@ -22,6 +22,7 @@ urlpatterns = [
     path('nuclsearch/',views.nucleotidesearch,name="nucleotidesearch"),
     path('protsearchform/',views.proteinsearchform,name="proteinsearchform"),
     path('protsearch/',views.proteinsearch,name="proteinsearch"),
+    path('export/',views.export,name="export"),
     path('about/', views.show_help, name='about'),
     path('textsearch/', views.textsearch, name='textsearch'),
 
