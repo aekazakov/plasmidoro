@@ -71,7 +71,7 @@ class Magic_pool_part_type_info(models.Model):
     description = models.TextField()
 
     def __str__(self):
-        return self.magic_pool_part.name + ': ' +  self.name
+        return self.magic_pool_part_type.name + ': ' +  self.name
 
 
 class Vector_type(models.Model):
@@ -99,7 +99,7 @@ class Vector_type_part(models.Model):
         unique_together = ('vector_type', 'order',)
 
     def __str__(self):
-        return str(self.order) + ': ' + self.part.name
+        return str(self.order) + ': ' + self.part_type.name
 
 
 class Vector_type_info(models.Model):
@@ -183,7 +183,7 @@ class Magic_pool(models.Model):
 
 class Plasmid(models.Model):
     '''
-        stores information about plasmids from the All_plasmids_Oct19_2023
+        stores information about plasmids from sequence files and All_plasmids_MONTHDAY_YEAR
         
     '''
     name = models.CharField(max_length=255, unique=True)

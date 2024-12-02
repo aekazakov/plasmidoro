@@ -38,7 +38,7 @@
             <header class="align-center">
               <p class="align-center">Strain</p>
             </header>
-			  {% if strain != '' %}
+			  {% if strain %}
 			  <h5 class="align-center"><a href="{% url 'straindetails' strain_id=strain.id  %}">{{ plasmid.amd_number }}</a></h5>
 		      {% else %}
 			  <h5 class="align-center">{{ plasmid.amd_number }}</h5>

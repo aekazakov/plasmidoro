@@ -106,7 +106,7 @@ def create_feature(feature, plasmid_obj):
             protein_name = str(feature.qualifiers['locus_tag'][0])
         else:
             protein_name = 'unknown_protein'
-
+        protein_name = protein_name.replace('\n','')
         if 'product' in feature.qualifiers:
             protein_function = str(feature.qualifiers['product'][0])
         elif 'note' in feature.qualifiers:
@@ -128,49 +128,68 @@ def create_feature(feature, plasmid_obj):
             feature = feature_obj
         )
     return 1    
-            
 
-def import_seq_records(records, seq_name, sequence_file, overwrite_existing=False):
+    
+def update_plasmid(plasmid, seq_record, sequence_file, checksum):
+    # Replace sequence, wipe out old features and create new features
+    ret_val = 0
+    feature_count = 0
+    plasmid.sequence = str(seq_record.seq)
+    plasmid.sequence_file = sequence_file
+    plasmid.footprint = checksum
+    plasmid.save()
+    Feature.objects.filter(plasmid=plasmid.id).delete()
+    Protein.objects.filter(feature=None).delete()
+    
+    for feature in seq_record.features:
+        feature_count += create_feature(feature, plasmid)
+    print(plasmid.name, 'object updated')
+    ret_val = 1
+    return ret_val, feature_count
+    
+
+def import_seq_records(records, seq_name, sequence_file, checksum, overwrite_existing=False):
     record_count = 0
     for seq_record in records:
         record_count += 1
         if record_count > 1:
             continue
         existing_plasmids = Plasmid.objects.filter(name=seq_name)
-        seq_record_sequence = str(seq_record.seq)
-        new_footprint = hashlib.md5(seq_record_sequence.encode('utf-8')).hexdigest()
         feature_count = 0
         if existing_plasmids.exists():
             # Check sequence
             existing_plasmid = existing_plasmids.first()
             if overwrite_existing:
-                if existing_plasmid.footprint == new_footprint and Feature.objects.filter(plasmid=existing_plasmid.id).exists():
-                    # Update only features
-                    for feature in seq_record.features:
-                        feature_count += create_feature(feature, existing_plasmid)
-                    if feature_count > 0:
-                        print(existing_plasmid.name, 'object updated')
-                        existing_plasmid.sequence_file = sequence_file
-                        existing_plasmid.save()
-                        ret_val = 1
-                    else:
-                        # Nothing to do here
-                        print(existing_plasmid.name, 'object was not updated')
-                        ret_val = 0
+                if existing_plasmid.footprint == checksum and existing_plasmid.sequence_file == sequence_file:
+                    # Nothing to do here
+                    print(existing_plasmid.name, 'did not change')
+                    ret_val = 0
+                elif existing_plasmid.sequence_file == sequence_file:
+                    # The file has changed. Update plasmid object
+                    ret_val, feature_count = update_plasmid(existing_plasmid, seq_record, sequence_file, checksum)
                 else:
-                    # Replace sequence, wipe out old features and create new features
-                    existing_plasmid.sequence = seq_record_sequence
-                    existing_plasmid.sequence_file = sequence_file
-                    existing_plasmid.save()
-                    Feature.objects.filter(plasmid=existing_plasmid.id).delete()
-                    Protein.objects.filter(feature=None).delete()
-                    
-                    for feature in seq_record.features:
-                        feature_count += create_feature(feature, existing_plasmid)
-                    print(existing_plasmid.name, 'object updated')
-                    ret_val = 1
+                    print('New file found for', existing_plasmid.name)
+                    if existing_plasmid.sequence_file == '':
+                        ret_val, feature_count = update_plasmid(existing_plasmid, seq_record, sequence_file, checksum)
+                    elif existing_plasmid.sequence_file.endswith('.fa') or existing_plasmid.sequence_file.endswith('.fna'):
+                        ret_val, feature_count = update_plasmid(existing_plasmid, seq_record, sequence_file, checksum)
+                    elif existing_plasmid.sequence_file.endswith('.gb') or existing_plasmid.sequence_file.endswith('.ape'):
+                        if sequence_file.endswith('.dna') or sequence_file.endswith('.gb') or sequence_file.endswith('.ape'):
+                            ret_val, feature_count = update_plasmid(existing_plasmid, seq_record, sequence_file, checksum)
+                        else:
+                            print(sequence_file, 'was skipped because Genbank format is preferred')
+                            ret_val = 0
+                    elif existing_plasmid.sequence_file.endswith('.dna'):
+                        if sequence_file.endswith('.dna'):
+                            ret_val, feature_count = update_plasmid(existing_plasmid, seq_record, sequence_file, checksum)
+                        else:
+                            print(sequence_file, 'was skipped because Snapgene format is preferred')
+                            ret_val = 0
+                    else:
+                        print('File format is not supported:', sequence_file)
+                        ret_val = 0
             else:
-                print(existing_plasmid.name, 'object not updated because the --overwrite option is omitted')
+                print(existing_plasmid.name, 'object not updated because the --overwrite option is not set')
                 ret_val = 0
         else:
             # Create new plasmid object and features
@@ -178,8 +197,8 @@ def import_seq_records(records, seq_name, sequence_file, overwrite_existing=Fals
                 name = seq_name,
                 amd_number = '',
                 description = '',
-                sequence = seq_record_sequence,
-                footprint = new_footprint,
+                sequence = str(seq_record.seq),
+                footprint = checksum,
                 sequence_file = sequence_file
             )
             for feature in seq_record.features:
@@ -193,10 +212,12 @@ def import_seq_records(records, seq_name, sequence_file, overwrite_existing=Fals
 
 def import_plasmid_snapgene(dna_file, sequence_file, overwrite_existing):
     print('Working on Snapgene file', dna_file)
+    with open(dna_file, 'rb') as infile:
+        checksum = hashlib.md5(infile.read()).hexdigest()
     records = SeqIO.parse(dna_file, "snapgene")
     filename = dna_file.split('/')[-1]
     try:
-        ret_val = import_seq_records(records, filename.split('.dna')[0], sequence_file, overwrite_existing)
+        ret_val = import_seq_records(records, filename.split('.dna')[0], sequence_file, checksum, overwrite_existing)
     except:
         print('Snapgene file conversion error', dna_file)
         ret_val = 0
@@ -204,10 +225,12 @@ def import_plasmid_snapgene(dna_file, sequence_file, overwrite_existing):
             
 def import_plasmid_fasta(fna_file, sequence_file, overwrite_existing):
     print('Working on FASTA file', fna_file)
+    with open(fna_file, 'rb') as infile:
+        checksum = hashlib.md5(infile.read()).hexdigest()
     records = SeqIO.parse(fna_file, "fasta")
     filename = fna_file.split('/')[-1]
     try:
-        ret_val = import_seq_records(records, '.'.join(filename.split('.')[:-1]), sequence_file, overwrite_existing)
+        ret_val = import_seq_records(records, '.'.join(filename.split('.')[:-1]), sequence_file, checksum, overwrite_existing)
     except:
         print('FASTA file conversion error', fna_file)
         ret_val = 0
@@ -216,17 +239,24 @@ def import_plasmid_fasta(fna_file, sequence_file, overwrite_existing):
 def import_plasmid_gbk(gbk_file, sequence_file, overwrite_existing):
     print('Working on GenBank file', gbk_file)
     if gbk_file.endswith('.gz'):
+        gbk_handle = gzip.open(gbk_file, 'rb')
+    else:
+        gbk_handle = open(gbk_file, 'rb')
+    checksum = hashlib.md5(gbk_handle.read()).hexdigest()
+    gbk_handle.close()
+
+    if gbk_file.endswith('.gz'):
         gbk_handle = gzip.open(gbk_file, 'rt')
     else:
         gbk_handle = open(gbk_file, 'r')
     records = SeqIO.parse(gbk_handle, "genbank")
     filename = gbk_file.split('/')[-1]
-    ret_val = import_seq_records(records, '.'.join(filename.split('.')[:-1]), sequence_file, overwrite_existing)
+    ret_val = import_seq_records(records, '.'.join(filename.split('.')[:-1]), sequence_file, checksum, overwrite_existing)
     gbk_handle.close()
     return ret_val
 
 
-def update_alldata():
+def update_alldata(overwrite=False):
     if not os.path.exists(DATA_DIR):
         print("Data directory does not exists: " + DATA_DIR)
         return
@@ -271,7 +301,7 @@ def update_alldata():
         for item in delete_objects:
             item.delete()
         delete_objects = []
-    plasmids_nomap = import_plasmids(plasmid_maps_dir, False)
+    plasmids_nomap = import_plasmids(plasmid_maps_dir, overwrite)
     for plasmid_obj in existing_plasmids_nomap:
         if plasmid_obj.name not in plasmids_nomap:
             print(plasmid.name + ' plasmid to be deleted')
@@ -921,11 +951,13 @@ def export_contigs():
     nucl_db_file = '/mnt/data/work/Plasmids/plasmidoro/data/nucl.fna'
     with open(nucl_db_file, 'w') as outfile:
         for item in Plasmid.objects.values('id', 'name', 'amd_number', 'sequence'):
-            outfile.write('>' + str(item['id']) + '|' + item['name'] + '|plasmid|' + item['amd_number'] +
+            if item['sequence'] != '':
+                outfile.write('>' + str(item['id']) + '|' + ''.join([i if ord(i) < 128 else '.' for i in item['name']]) + '|plasmid|' + item['amd_number'] +
                           '\n' + item['sequence'] +
                           '\n')
         for item in Oligo.objects.values('id', 'name', 'sequence'):
-            outfile.write('>' + str(item['id']) + '|' + item['name'] + '|oligo|' +
+            if item['sequence'] != '':
+                outfile.write('>' + str(item['id']) + '|' + ''.join([i if ord(i) < 128 else '.' for i in item['name']]) + '|oligo|' +
                           '\n' + item['sequence'] +
                           '\n')
     return nucl_db_file
@@ -940,7 +972,7 @@ def export_proteins():
     with open(prot_db_file, 'w') as outfile:
         for protein in Protein.objects.all():
             if protein.sequence != '':
-                outfile.write('>' + str(protein.id) + '|' + protein.name + '|' +
+                outfile.write('>' + str(protein.id) + '|' + ''.join([i if ord(i) < 128 else '.' for i in protein.name]) + '|' +
                     protein.feature.plasmid.name + '|' + protein.feature.location_str +
                     '\n' + protein.sequence +
                     '\n')
