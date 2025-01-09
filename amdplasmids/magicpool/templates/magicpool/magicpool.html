@@ -3,6 +3,7 @@
 
 {% block page-title %}<title>{{ site_title }}</title>{% endblock %}
 
+{% block title %}<div class="logo"><h2>Magic pool</h2></div>{% endblock %}
 
 {% block content %}
     <section id="one" class="wrapper style3">
@@ -22,8 +23,10 @@
               <p class="align-center">Info</p>
             </header>
 			<h5 class="align-center">Antibiotic resistance: <strong>{{ magicpool.antibiotic_resistance }}</strong></h5>
-			<h5 class="align-center">Vector type: <strong><a href="{% url 'vectordetails' vector_id=magicpool.vector_type.id  %}">{{ magicpool.vector_type.name }}</a></strong></h5>
+			<h5 class="align-center">Vector design: <strong><a href="{% url 'vectordetails' vector_id=magicpool.vector_type.id  %}">{{ magicpool.vector_type.name }}</a></strong></h5>
+			{% if magicpool.strain %}
 			<h5 class="align-center">Strain: <strong><a href="{% url 'straindetails' strain_id=magicpool.strain.id  %}">{{ magicpool.strain.amd_number }}</a></strong></h5>
+			{% endif %}
           </div>
         </div>
         <header class="align-center">

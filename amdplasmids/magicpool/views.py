@@ -56,7 +56,7 @@ def plasmid_viewer(request, plasmid_id):
         'site_title':plasmid.name + ' [' + plasmid.amd_number + '] viewer',
         'plasmid':plasmid,
         'features':Feature.objects.filter(plasmid=plasmid_id),
-        'translations':Feature.objects.filter(plasmid=plasmid_id, feature_type__name='gene'),
+        'translations':Feature.objects.filter(plasmid=plasmid_id, feature_type__name__in=['gene', 'CDS']),
         }
     print(context)
     return HttpResponse(template.render(context, request))
@@ -68,11 +68,12 @@ def part_detail(request, part_id):
     '''
     template = loader.get_template('magicpool/part.html')
     part = Magic_pool_part_type.objects.get(id=part_id)
+    vector_type_parts = Vector_type_part.objects.filter(part_type=part_id)
     context = {
         'site_title':part.name,
         'part':part,
         'info':Magic_pool_part_type_info.objects.filter(magic_pool_part_type=part_id),
-        'vectors':Vector_type.objects.filter(vector_type_part__id=part_id),
+        'vectors':Vector_type.objects.filter(vector_type_part__id__in=vector_type_parts),
         'plasmids':Plasmid.objects.filter(magic_pool_part__id=part_id)
         }
     return HttpResponse(template.render(context, request))
@@ -311,35 +312,80 @@ def proteinsearch(request):
         result = {}
         params = {'sequence': request.POST.get("sequence"),
                   'evalue': request.POST.get("evalue"),
-                  'hitstoshow': request.POST.get("hitstoshow")
+                  'hitstoshow': request.POST.get("hitstoshow"),
+                  'tool': request.POST.get("tool"),
                   }
-        hits, searchcontext, query_len, _ = run_protein_search(params)
+        hits, searchcontext, query_len, tool = run_protein_search(params)
         if searchcontext != '':
             context['searchcontext'] = searchcontext
-        for row in hits:
-            row=row.split('\t')
-            print('Search for gene %s', row[1])
-            if row[0] not in result:
-                result[row[0]] = []
-            unaligned_part =  int(row[6]) - 1 + query_len - int(row[7])
-            query_cov = (query_len - unaligned_part) * 100.0 / query_len
-            proteins = Protein.objects.select_related(
-                'feature', 'feature__plasmid'
-            ).filter(
-                id = int(row[1].split('|')[0])
-            )
-            for protein in proteins:
-                hit = [protein.name,
-                       protein.feature.plasmid.id,
-                       protein.feature.plasmid.name,
-                       protein.function,
-                       '{:.1f}'.format(float(row[2])),
-                       row[3],
-                       '{:.1f}'.format(query_cov),
-                       row[10],
-                       row[11]
-                       ]
-                result[row[0]].append(hit)
+        if tool == 'blastp':
+            for row in hits:
+                row=row.split('\t')
+                print('Search for gene', row[1])
+                if row[0] not in result:
+                    result[row[0]] = []
+                unaligned_part =  int(row[6]) - 1 + query_len - int(row[7])
+                query_cov = (query_len - unaligned_part) * 100.0 / query_len
+                proteins = Protein.objects.select_related(
+                    'feature', 'feature__plasmid'
+                ).filter(
+                    id = int(row[1].split('|')[0])
+                )
+                for protein in proteins:
+                    hit = [protein.name + ': ' + protein.function + ' [' + row[8] + '..' + row[9] + ']',
+                           protein.feature.plasmid.id,
+                           protein.feature.plasmid.name,
+                           '{:.1f}'.format(float(row[2])),
+                           row[3],
+                           '{:.1f}'.format(query_cov),
+                           row[10],
+                           row[11]
+                           ]
+                    result[row[0]].append(hit)
+        elif tool == 'tblastn':
+            for row in hits:
+                row=row.split('\t')
+                print('Search for gene', row[1])
+                if row[0] not in result:
+                    result[row[0]] = []
+                unaligned_part =  int(row[6]) - 1 + query_len - int(row[7])
+                query_cov = (query_len - unaligned_part) * 100.0 / query_len
+                target_tokens = row[1].split('|')
+                target_id = int(target_tokens[0])
+                if int(row[8]) < int(row[9]):
+                    hit_coord = row[8] + '..' + row[9]
+                else:
+                    hit_coord = 'complement(' + row[9] + '..' + row[8] + ')'
+                if target_tokens[2] == 'plasmid':
+                    plasmid = Plasmid.objects.get(id = target_id)
+                    if plasmid.amd_number != '':
+                        plasmid_label = plasmid.name + '/' + plasmid.amd_number
+                    else:
+                        plasmid_label = plasmid.name
+                    hit = ['Plasmid',
+                           plasmid.id,
+                           plasmid_label,
+                           '{:.1f}'.format(float(row[2])),
+                           row[3],
+                           '{:.1f}'.format(query_cov),
+                           row[10],
+                           row[11],
+                           hit_coord
+                           ]
+                    result[row[0]].append(hit)
+                elif target_tokens[2] == 'oligo':
+                    oligo = Oligo.objects.get(id = target_id)
+                    hit = ['Oligo',
+                           oligo.id,
+                           oligo.name,
+                           '{:.1f}'.format(float(row[2])),
+                           row[3],
+                           '{:.1f}'.format(query_cov),
+                           row[10],
+                           row[11],
+                           hit_coord
+                           ]
+                    result[row[0]].append(hit)
         context['searchresult'] = result
     else:
         return render(request,

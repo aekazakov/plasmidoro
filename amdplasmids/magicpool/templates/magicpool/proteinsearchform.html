@@ -19,6 +19,16 @@
                   </div>
                   <div class="row uniform">
                     <div class="4u 12u$(small)">
+                      <input type="radio" id="blastp" name="tool" value="blastp" checked>
+                      <label for="blastp">BLASTP (search in proteins)</label>
+                    </div>
+                    <div class="4u 12u$(small)">
+                      <input type="radio" id="tblastn" name="tool" value="tblastn">
+                      <label for="tblastn">TBLASTN (search in plasmids and oligos)</label>
+                    </div>
+                  </div>
+                  <div class="row uniform">
+                    <div class="4u 12u$(small)">
                       <div class="select-wrapper">
                         <label for="evalue">E-value threshold:</label>
                         <select id="evalue" name="evalue">

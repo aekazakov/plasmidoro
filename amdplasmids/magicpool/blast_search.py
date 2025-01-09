@@ -38,6 +38,7 @@ def validate_params(params):
         result['sequence'] = params
         result['evalue'] = '0.0001'
         result['hitstoshow'] = '100'
+        result['tool'] = 'blastp'
     else:
         result['sequence'] = params['sequence']
         try:
@@ -90,6 +91,16 @@ def validate_params(params):
             raise SuspiciousOperation(
             "Unacceptable value '%s' for hitstoshow parameter." % result['hitstoshow']
             )
+        try:
+            tool = params['tool']
+        except KeyError:
+            tool = 'blastp'
+        result['tool'] = tool
+        if result['tool'] not in ['blastn', 'blastp', 'tblastn']:
+            raise SuspiciousOperation(
+            "Unacceptable value '%s' for tool parameter." % result['tool']
+            )
+        
     return result
 
         
@@ -106,47 +117,80 @@ def run_protein_search(params):
         return result, searchcontext, 0, ''
     query = params['sequence']
     PROTEIN_ALPHABET = 'ACDEFGHIKLMNPQRSTVWYBXZJUO'
-    blast_db = '/mnt/data/work/Plasmids/plasmidoro/data/blast_prot'
+    
     searchcontext = ''
     query_id, query_sequence = _sanitize_sequence(query)
     seq_record = SeqRecord(Seq(query_sequence), id=query_id)
     if not _verify_alphabet(seq_record.seq.upper(), PROTEIN_ALPHABET):
         searchcontext = 'Wrong protein sequence format. ' +\
                         'FASTA header and valid sequence required.'
-        return result, searchcontext, 0, query_id
+        return result, searchcontext, 0, params['tool']
     sequence = str(seq_record.seq)
     sequence_id = str(seq_record.id)
 
     if not sequence:
         searchcontext = 'Wrong sequence format. ' +\
                         'FASTA header and valid sequence required.'
-        return result, searchcontext, 0, sequence_id
+        return result, searchcontext, 0, params['tool']
     query_len = len(seq_record)
-    args = [
-        'blastp',
-        '-db',
-        blast_db,
-        '-max_target_seqs', params['hitstoshow'],
-        '-evalue', params['evalue'],
-        '-matrix=PAM30',
-        '-outfmt',
-        '6'
-        ]
-    with Popen(args,
-               stdin=PIPE,
-               stdout=PIPE,
-               stderr=STDOUT,
-               bufsize=1,
-               universal_newlines=True
-               ) as p:
-        blastoutput, err = p.communicate('>' + sequence_id + '\n' + sequence)
-    if p.returncode != 0:
-        searchcontext = 'BLASTP finished with error:\n' + '\n'.join(err)
-        print('BLASTP finished with error. Parameters: %s \n %s',
-                     str(params), '\n'.join(err)
-                     )
-        return result, searchcontext, 0, sequence_id
+    if params['tool'] == 'blastp':
+        blast_db = '/mnt/data/work/Plasmids/plasmidoro/data/blast_prot'
+        args = [
+            'blastp',
+            '-db',
+            blast_db,
+            '-max_target_seqs', params['hitstoshow'],
+            '-evalue', params['evalue'],
+            '-matrix=PAM30',
+            '-outfmt',
+            '6'
+            ]
+        with Popen(args,
+                   stdin=PIPE,
+                   stdout=PIPE,
+                   stderr=STDOUT,
+                   bufsize=1,
+                   universal_newlines=True
+                   ) as p:
+            blastoutput, err = p.communicate('>' + sequence_id + '\n' + sequence)
+        if p.returncode != 0:
+            searchcontext = 'BLASTP finished with error:\n' + '\n'.join(err)
+            print('BLASTP finished with error. Parameters: %s \n %s',
+                         str(params), '\n'.join(err)
+                         )
+            return result, searchcontext, 0, params['tool']
+    elif params['tool'] == 'tblastn':
+        blast_db = '/mnt/data/work/Plasmids/plasmidoro/data/blast_nucl'
+        args = [
+            'tblastn',
+            '-db', blast_db,
+            '-max_target_seqs', params['hitstoshow'],
+            '-evalue', params['evalue'],
+            '-soft_masking', 'false',
+            '-outfmt', '6'
+            ]
+        print(' '.join(args))
+        with Popen(args,
+                   stdin=PIPE,
+                   stdout=PIPE,
+                   stderr=STDOUT,
+                   bufsize=1,
+                   universal_newlines=True
+                   ) as p:
+            blastoutput, err = p.communicate('>' + sequence_id + '\n' + sequence)
+        if p.returncode != 0:
+            if err is None:
+                err = ['Execution error',]
+            searchcontext = 'BLASTN finished with error:\n' + '\n'.join(err)
+            print('BLASTN finished with error. Parameters: %s \n %s',
+                         str(params), '\n'.join(err)
+                         )
+            return result, searchcontext, 0, params['tool']
+    else:
+        return result, searchcontext, 0, params['tool']
+        
     for line in blastoutput.split('\n'):
+        print(line)
         if line.startswith('#'):
             continue
         row = line.rstrip('\n\r').split('\t')
@@ -159,7 +203,8 @@ def run_protein_search(params):
         searchcontext = 'No hits found'
     if len(result) > int(params['hitstoshow']):
         result = result[:int(params['hitstoshow'])]
-    return result, searchcontext, query_len, sequence_id
+    print(result)
+    return result, searchcontext, query_len, params['tool']
 
 def run_nucleotide_search(params):
     '''

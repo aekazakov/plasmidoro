@@ -99,7 +99,7 @@ class Vector_type_part(models.Model):
         unique_together = ('vector_type', 'order',)
 
     def __str__(self):
-        return str(self.order) + ': ' + self.part_type.name
+        return str(self.order) + ': ' + self.part_type.name + '[' + self.vector_type.name + ']'
 
 
 class Vector_type_info(models.Model):

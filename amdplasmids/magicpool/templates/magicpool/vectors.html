@@ -37,7 +37,7 @@
                 <tr>
                   <td><a href="{% url 'vectordetails' vector_id=item.id  %}">{{ item.name }}</a></td>
                   <td>{{ item.description }}</td>
-                  <td>{{ item.vector_part_set.all|length }}</td>
+                  <td>{{ item.vector_type_part_set.all|length }}</td>
                 </tr>
               {% endfor %}
             </tbody>

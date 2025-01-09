@@ -22,25 +22,52 @@ def guess_feature_type(name, type_label):
     feature_type_dict = {item.name:item for item in Feature_type.objects.all()}
     if type_label=='misc_feature':
         if name.endswith('romoter'):
-            return Feature_type.objects.get(name='promoter')
+            if 'promoter' in feature_type_dict:
+                return feature_type_dict['promoter']
+            else:
+                return Feature_type.objects.create(name='promoter')
         elif 'origin of replication' in name:
-            return Feature_type.objects.get(name='origin')
+            if 'rep_origin' in feature_type_dict:
+                return feature_type_dict['rep_origin']
+            else:
+                return Feature_type.objects.create(name='rep_origin')
         elif name.startswith('Ori'):
-            return Feature_type.objects.get(name='origin')
+            if 'rep_origin' in feature_type_dict:
+                return feature_type_dict['rep_origin']
+            else:
+                return Feature_type.objects.create(name='rep_origin')
         elif name == 'ColE1':
-            return Feature_type.objects.get(name='origin')
+            if 'rep_origin' in feature_type_dict:
+                return feature_type_dict['rep_origin']
+            else:
+                return Feature_type.objects.create(name='rep_origin')
         elif 'BsmBI' in name:
-            return Feature_type.objects.get(name='restriction site')
+            if 'restriction_site' in feature_type_dict:
+                return feature_type_dict['restriction_site']
+            else:
+                return Feature_type.objects.create(name='restriction_site')
         elif 'inverted repeat' in name:
-            return Feature_type.objects.get(name='IR')
+            if 'IR' in feature_type_dict:
+                return feature_type_dict['IR']
+            else:
+                return Feature_type.objects.create(name='IR')
         elif 'transposase enzyme' in name:
-            return Feature_type.objects.get(name='gene')
+            if 'gene' in feature_type_dict:
+                return feature_type_dict['gene']
+            else:
+                return Feature_type.objects.create(name='gene')
         else:
-            return Feature_type.objects.get(name='misc_feature')
+            if 'misc_feature' in feature_type_dict:
+                return feature_type_dict['misc_feature']
+            else:
+                return Feature_type.objects.create(name='misc_feature')
     elif type_label in feature_type_dict:
         return feature_type_dict[type_label]
     elif type_label == 'CDS':
-        return Feature_type.objects.get(name='gene')
+            if 'CDS' in feature_type_dict:
+                return feature_type_dict['CDS']
+            else:
+                return Feature_type.objects.create(name='CDS')
     else:
         return Feature_type.objects.create(name=type_label)
 
@@ -107,6 +134,7 @@ def create_feature(feature, plasmid_obj):
         else:
             protein_name = 'unknown_protein'
         protein_name = protein_name.replace('\n','')
+        protein_name = protein_name.replace('&nbsp;',' ')
         if 'product' in feature.qualifiers:
             protein_function = str(feature.qualifiers['product'][0])
         elif 'note' in feature.qualifiers:
@@ -271,7 +299,7 @@ def update_alldata(overwrite=False):
     with open(os.path.join(DATA_DIR, 'data_download.sh'), 'w') as outfile:
         outfile.write('#!/usr/bin/bash\n')
         outfile.write('cd '+ DATA_DIR + '\n')
-        outfile.write('rclone copyto --config ./rclone.conf "gdriveR:Deutschbauer_Lab_Documents/PLASMID_MAPS_2023_onward" --drive-shared-with-me ./plasmid_maps\n')
+        outfile.write('rclone sync --config ./rclone.conf "gdriveR:Deutschbauer_Lab_Documents/PLASMID_MAPS_2023_onward" --drive-shared-with-me ./plasmid_maps\n')
         outfile.write('rclone copyto --config ./rclone.conf "gdriveR:Deutschbauer_Lab_Documents/AMD strain collection.xlsx" --drive-shared-with-me ./strains.xlsx\n')
         outfile.write('rclone copyto --config ./rclone.conf "gdriveR:Deutschbauer_Lab_Documents/Oligos_and_gBlocks/oAD_oligos_and_gAD_gBlocks.xlsx" --drive-shared-with-me ./oligos.xlsx\n')
     cmd = ['bash', os.path.join(DATA_DIR, 'data_download.sh')]
@@ -284,7 +312,10 @@ def update_alldata(overwrite=False):
         # (see https://github.com/PyCQA/pylint/issues/1860)
         # pylint: disable=no-member
         raise CalledProcessError(proc.returncode, proc.args)
-    
+
+    # Import magic pool types and vector designs before importing plasmid files
+    import_magic_pool_types(os.path.join(plasmid_maps_dir, 'magicpool_vector_designs', 'magic_pool_design.xlsx'))
+        
     if not os.path.exists(plasmid_maps_dir):
         print("Data directory does not exists: " + plasmid_maps_dir)
         return
@@ -301,6 +332,7 @@ def update_alldata(overwrite=False):
         for item in delete_objects:
             item.delete()
         delete_objects = []
+
     plasmids_nomap = import_plasmids(plasmid_maps_dir, overwrite)
     for plasmid_obj in existing_plasmids_nomap:
         if plasmid_obj.name not in plasmids_nomap:
@@ -311,7 +343,6 @@ def update_alldata(overwrite=False):
             item.delete()
         delete_objects = []
     
-    import_magic_pool_types(os.path.join(plasmid_maps_dir, 'magicpool_vector_designs', 'magic_pool_design.xlsx'))
     import_magic_pools(os.path.join(plasmid_maps_dir, 'Magic_Pools', 'Magic_Pool_Summary_Sheet.xlsx'))
 
     existing_oligos = Oligo.objects.all()
@@ -354,6 +385,8 @@ def import_plasmids(work_dir, overwrite_existing):
             elif filename.endswith('.gb') or filename.endswith('.ape'):
                 obj_count += import_plasmid_gbk(filepath, filepath.split(work_dir)[-1][1:], overwrite_existing)
             elif filename.endswith('.xlsx'):
+                if filename.startswith('Old_'):
+                    continue
                 ret = ret + import_plasmids_table(filepath, overwrite_existing)
             elif filename.endswith('.fa') or filename.endswith('.fna'):
                 obj_count += import_plasmid_fasta(filepath, filepath.split(work_dir)[-1][1:], overwrite_existing)
@@ -431,7 +464,7 @@ def import_plasmids_table(xlsx_path, overwrite_existing=False):
     for i, row in enumerate(sheet.iter_rows(values_only=True)):
         if i == 0:
             xlsx_header = row[1:]
-        else:
+        else:   
             plasmid_name = row[0]
             if plasmid_name == '' or plasmid_name is None:
                 continue
@@ -511,11 +544,11 @@ def import_magic_pool_types(xlsx_path):
     sheet = wb_obj.get_sheet_by_name('part_names_overlaps')
     xlsx_header = []
     created_count = 0
-    existing_parts = {item.name:item for item in Magic_pool_part_type.objects.all()}
     for i, row in enumerate(sheet.iter_rows()):
         if i == 0:
             xlsx_header = [cell.value for cell in row[1:]]
         else:
+            existing_parts = {item.name:item for item in Magic_pool_part_type.objects.all()}
             part_name = row[0].value
             if part_name == '' or part_name is None:
                 continue
@@ -575,7 +608,7 @@ def import_magic_pool_types(xlsx_path):
                 )
             for item in partinfo:
                 info_obj = Magic_pool_part_type_info.objects.create(
-                    magic_pool_part = part_obj,
+                    magic_pool_part_type = part_obj,
                     name = item[0],
                     description = item[1]
                 )
@@ -952,12 +985,12 @@ def export_contigs():
     with open(nucl_db_file, 'w') as outfile:
         for item in Plasmid.objects.values('id', 'name', 'amd_number', 'sequence'):
             if item['sequence'] != '':
-                outfile.write('>' + str(item['id']) + '|' + ''.join([i if ord(i) < 128 else '.' for i in item['name']]) + '|plasmid|' + item['amd_number'] +
+                outfile.write('>' + str(item['id']) + '|' + ''.join([i if ord(i) < 128 else '.' for i in item['name'].replace(' ', '_')]) + '|plasmid|' + item['amd_number'] +
                           '\n' + item['sequence'] +
                           '\n')
         for item in Oligo.objects.values('id', 'name', 'sequence'):
             if item['sequence'] != '':
-                outfile.write('>' + str(item['id']) + '|' + ''.join([i if ord(i) < 128 else '.' for i in item['name']]) + '|oligo|' +
+                outfile.write('>' + str(item['id']) + '|' + ''.join([i if ord(i) < 128 else '.' for i in item['name'].replace(' ', '_')]) + '|oligo|' +
                           '\n' + item['sequence'] +
                           '\n')
     return nucl_db_file
@@ -972,8 +1005,9 @@ def export_proteins():
     with open(prot_db_file, 'w') as outfile:
         for protein in Protein.objects.all():
             if protein.sequence != '':
-                outfile.write('>' + str(protein.id) + '|' + ''.join([i if ord(i) < 128 else '.' for i in protein.name]) + '|' +
-                    protein.feature.plasmid.name + '|' + protein.feature.location_str +
+                protein_name = protein.name.replace('&nbsp;', '_')
+                outfile.write('>' + str(protein.id) + '|' + ''.join([i if ord(i) < 128 else '.' for i in protein_name.replace(' ', '_')]) + '|' +
+                    ''.join([i if ord(i) < 128 else '.' for i in protein.feature.plasmid.name.replace(' ', '_')]) + '|' + protein.feature.location_str +
                     '\n' + protein.sequence +
                     '\n')
     return prot_db_file

@@ -5,7 +5,7 @@
 {% block script-header %}
 {% endblock %}
 
-{% block title %}<div class="logo"><h2>Protein search</h2></div>{% endblock %}
+{% block title %}<div class="logo"><h2>Protein search results</h2></div>{% endblock %}
 
 {% block content %}
         <section id="two" class="wrapper style3">
@@ -21,7 +21,6 @@
                           <tr>
                             <th>Protein</th>
                             <th>Plasmid</th>
-                            <th>Function</th>
                             <th>%identity</th>
                             <th>Alignment length</th>
                             <th>%Query coverage</th>
@@ -33,13 +32,18 @@
                           {% for item in hits %}
                             <tr>
                               <td align="left">{{ item.0 }}</td>
-                              <td align="left"><a href="{% url 'plasmiddetails' plasmid_id=item.1 %}">{{ item.2 }}</a> </td>
+							  {% if item.0 == "Plasmid" %}
+							  <td align="left"><a href="{% url 'plasmiddetails' plasmid_id=item.1 %}">{{ item.2 }}</a> [{{ item.8 }}]</td>
+							  {% elif item.0 == "Oligo" %}
+							  <td align="left"><a href="{% url 'oligodetails' oligo_id=item.1 %}">{{ item.2 }}</a> [{{ item.8 }}]</td>
+							  {% else %}
+							  <td align="left"><a href="{% url 'plasmiddetails' plasmid_id=item.1 %}">{{ item.2 }}</a> </td>
+							  {% endif %}
                               <td>{{ item.3 }}</td>
                               <td>{{ item.4 }}</td>
                               <td>{{ item.5 }}</td>
                               <td>{{ item.6 }}</td>
                               <td>{{ item.7 }}</td>
-                              <td>{{ item.8 }}</td>
                             </tr>
                           {% endfor %}
                         </tbody>
