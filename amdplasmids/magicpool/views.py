@@ -253,6 +253,10 @@ def nucleotidesearch(request):
             query_cov = (query_len - unaligned_part) * 100.0 / query_len
             target_tokens = row[1].split('|')
             target_id = int(target_tokens[0])
+            if int(row[8]) < int(row[9]):
+                hit_coord = row[8] + '..' + row[9]
+            else:
+                hit_coord = 'complement(' + row[9] + '..' + row[8] + ')'
             if target_tokens[2] == 'plasmid':
                 plasmid = Plasmid.objects.get(id = target_id)
                 if plasmid.amd_number != '':
@@ -266,7 +270,8 @@ def nucleotidesearch(request):
                        row[3],
                        '{:.1f}'.format(query_cov),
                        row[10],
-                       row[11]
+                       row[11],
+                       hit_coord
                        ]
                 result[row[0]].append(hit)
             elif target_tokens[2] == 'oligo':
@@ -278,7 +283,8 @@ def nucleotidesearch(request):
                        row[3],
                        '{:.1f}'.format(query_cov),
                        row[10],
-                       row[11]
+                       row[11],
+                       hit_coord
                        ]
                 result[row[0]].append(hit)
         context['searchresult'] = result
@@ -501,6 +507,22 @@ def textsearch(request):
         template = loader.get_template('magicpool/oligos.html')
         context={
             'site_title':'Oligonucleotide search results',
+            'itemlist':object_list,
+            'searchcontext':query
+            }
+    elif type == 'feature':
+        if query:
+            object_list = Feature.objects.filter(
+                    (Q(name__icontains=query) |
+                    Q(plasmid__name__icontains=query) |
+                    Q(description__icontains=query))
+                ).distinct().order_by('name')
+        else:
+            query = ''
+            object_list = Feature.objects.none()
+        template = loader.get_template('magicpool/features.html')
+        context={
+            'site_title':'Feature search results',
             'itemlist':object_list,
             'searchcontext':query
             }

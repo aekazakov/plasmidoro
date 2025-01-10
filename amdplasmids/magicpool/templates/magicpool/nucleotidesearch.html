@@ -33,18 +33,17 @@
                             <tr>
                               <td>{{ item.0 }}</td>
 							  {% if item.0 == "Plasmid" %}
-							  <td align="left"><a href="{% url 'plasmiddetails' plasmid_id=item.1 %}">{{ item.2 }}</a> </td>
+							  <td align="left"><a href="{% url 'plasmiddetails' plasmid_id=item.1 %}">{{ item.2 }}</a> [{{ item.8 }}]</td>
 							  {% elif item.0 == "Oligo" %}
-							  <td align="left"><a href="{% url 'oligodetails' oligo_id=item.1 %}">{{ item.2 }}</a> </td>
+							  <td align="left"><a href="{% url 'oligodetails' oligo_id=item.1 %}">{{ item.2 }}</a> [{{ item.8 }}]</td>
 							  {% else %}
-							  <td align="left">{{ item.2 }}</a> </td>
+							  <td align="left">{{ item.2 }}</a> [{{ item.8 }}]</td>
 							  {% endif %}
                               <td>{{ item.3 }}</td>
                               <td>{{ item.4 }}</td>
                               <td>{{ item.5 }}</td>
                               <td>{{ item.6 }}</td>
                               <td>{{ item.7 }}</td>
-                              <td>{{ item.8 }}</td>
                             </tr>
                           {% endfor %}
                         </tbody>

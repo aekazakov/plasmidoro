@@ -1,22 +1,22 @@
 {% extends "base_generic.html" %}
 {% load static %}
 {% load my_tags %}
-{% block page-title %}<title>Plasmids</title>{% endblock %}
+{% block page-title %}<title>Features</title>{% endblock %}
 {% block script-header %}
 {% endblock %}
 
 
-{% block title %}<div class="logo"><h2>Plasmids</h2></div>{% endblock %}
+{% block title %}<div class="logo"><h2>Features</h2></div>{% endblock %}
 {% block content %}
     <section id="two" class="wrapper style3">
       <div class="inner">
         <header class="align-center">
           {% if searchcontext %}
-            <h4>{{ itemlist|length }} results for: {{ searchcontext }}</h4>
+            <h4> {{ itemlist|length }} results for: {{ searchcontext }}</h4>
           {% else %}
             <form action="{% url 'textsearch' %}" method="get">
-              <input name="query" type="text" placeholder="Quick search by plasmid name or description...">
-              <input type="hidden" name="type" id="type" value="plasmid">
+              <input name="query" type="text" placeholder="Quick search by feature name or description...">
+              <input type="hidden" name="type" id="type" value="feature">
             </form>
           {% endif %}
           {% if external %}
@@ -27,25 +27,23 @@
           <table>
             <thead>
               <tr>
+                <th>Feature</th>
+                <th>Type</th>
                 <th>Plasmid</th>
                 <th>AMD number</th>
-                <th>Magic pool part</th>
-                <th>Size</th>
+                <th>Location</th>
                 <th>Description</th>
               </tr>
             </thead>
             <tbody>
-              {% for plasmid in itemlist %}
+              {% for item in itemlist %}
                 <tr>
-                  <td><a href="{% url 'plasmiddetails' plasmid_id=plasmid.id  %}">{{ plasmid.name }}</a></td>
-                  <td>{{ plasmid.amd_number }}</td>
-				{% if plasmid.magic_pool_part %}
-                  <td>{{ plasmid.magic_pool_part.name }}</td>
-		        {% else %}
-				  <td></td>
-		        {% endif %}
-                  <td>{{ plasmid.sequence|length }}</td>
-                  <td>{{ plasmid.description }}</td>
+                  <td>{{ item.name }}</td>
+                  <td>{{ item.feature_type }}</td>
+                  <td><a href="{% url 'plasmiddetails' plasmid_id=item.plasmid.id  %}">{{ item.plasmid.name }}</a></td>
+                  <td>{{ item.plasmid.amd_number }}</td>
+                  <td>{{ item.location_str }}</td>
+                  <td>{{ item.description }}</td>
                 </tr>
               {% endfor %}
             </tbody>

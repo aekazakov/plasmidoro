@@ -127,3 +127,5 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DATA_DIR = '/mnt/data/work/Plasmids/datafiles'
+BLAST_PROT_DB = '/mnt/data/work/Plasmids/plasmidoro/data/blast_prot'
+BLAST_NUCL_DB = '/mnt/data/work/Plasmids/plasmidoro/data/blast_nucl'

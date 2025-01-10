@@ -12,7 +12,7 @@
       <div class="inner">
         <header class="align-center">
           {% if searchcontext %}
-            <h4>Search results for: {{ searchcontext }}</h4>
+            <h4>{{ itemlist|length }} results for: {{ searchcontext }}</h4>
           {% else %}
             <form action="{% url 'textsearch' %}" method="get">
               <input name="query" type="text" placeholder="Quick search by name or description...">

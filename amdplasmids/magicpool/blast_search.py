@@ -5,6 +5,8 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 from subprocess import Popen, PIPE, STDOUT
 from django.core.exceptions import SuspiciousOperation
+from amdplasmids.settings import BLAST_PROT_DB, BLAST_NUCL_DB
+
 
 def _verify_alphabet(sequence, alphabet):
     '''
@@ -134,7 +136,7 @@ def run_protein_search(params):
         return result, searchcontext, 0, params['tool']
     query_len = len(seq_record)
     if params['tool'] == 'blastp':
-        blast_db = '/mnt/data/work/Plasmids/plasmidoro/data/blast_prot'
+        blast_db = BLAST_PROT_DB
         args = [
             'blastp',
             '-db',
@@ -160,7 +162,7 @@ def run_protein_search(params):
                          )
             return result, searchcontext, 0, params['tool']
     elif params['tool'] == 'tblastn':
-        blast_db = '/mnt/data/work/Plasmids/plasmidoro/data/blast_nucl'
+        blast_db = BLAST_NUCL_DB
         args = [
             'tblastn',
             '-db', blast_db,
@@ -219,7 +221,7 @@ def run_nucleotide_search(params):
         return result, searchcontext, 0, ''
     query = params['sequence']
     DNA_ALPHABET = 'GATCRYWSMKHBVDN'
-    blast_db = '/mnt/data/work/Plasmids/plasmidoro/data/blast_nucl'
+    blast_db = BLAST_NUCL_DB
     searchcontext = ''
     query_id, query_sequence = _sanitize_sequence(query)
     seq_record = SeqRecord(Seq(query_sequence), id=query_id)

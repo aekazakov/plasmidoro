@@ -65,6 +65,15 @@
 				  <input type="hidden" name="type" id="type" value="oligo">
 				</form>
               </p>
+              <header class="align-center">
+                <h4>Search in features</h4>
+              </header>
+              <p>
+				<form action="{% url 'textsearch' %}" method="get">
+				  <input name="query" type="text" placeholder="Search by name or description...">
+				  <input type="hidden" name="type" id="type" value="feature">
+				</form>
+              </p>
             </div>
           </div>
         </section>
