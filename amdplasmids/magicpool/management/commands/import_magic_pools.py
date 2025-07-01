@@ -1,3 +1,4 @@
+import os
 from django.core.management.base import BaseCommand
 from magicpool.util import import_magic_pools
 from amdplasmids.settings import DATA_DIR

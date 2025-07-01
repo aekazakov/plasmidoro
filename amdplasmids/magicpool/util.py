@@ -285,9 +285,11 @@ def import_plasmid_gbk(gbk_file, sequence_file, overwrite_existing):
 
 
 def update_alldata(overwrite=False):
+    ret = []
     if not os.path.exists(DATA_DIR):
         print("Data directory does not exists: " + DATA_DIR)
-        return
+        ret.append("Data directory does not exists: " + DATA_DIR)
+        return ret
     else:
         print("Data directory: " + DATA_DIR)
     plasmid_maps_dir = os.path.join(DATA_DIR, 'plasmid_maps')
@@ -314,11 +316,13 @@ def update_alldata(overwrite=False):
         raise CalledProcessError(proc.returncode, proc.args)
 
     # Import magic pool types and vector designs before importing plasmid files
-    import_magic_pool_types(os.path.join(plasmid_maps_dir, 'magicpool_vector_designs', 'magic_pool_design.xlsx'))
+    report = import_magic_pool_types(os.path.join(plasmid_maps_dir, 'magicpool_vector_designs', 'magic_pool_design.xlsx'))
+    ret.append(report)
         
     if not os.path.exists(plasmid_maps_dir):
         print("Data directory does not exists: " + plasmid_maps_dir)
-        return
+        ret.append("Data directory does not exists: " + plasmid_maps_dir)
+        return ret
     else:
         print("Plasmid data directory found: " + plasmid_maps_dir)
     existing_plasmids_nomap = Plasmid.objects.filter(sequence_file='')
@@ -331,9 +335,11 @@ def update_alldata(overwrite=False):
     if delete_objects:
         for item in delete_objects:
             item.delete()
+        ret.append('Plasmids without sequence files were deleted: ' + str(len(delete_objects)))
         delete_objects = []
 
-    plasmids_nomap = import_plasmids(plasmid_maps_dir, overwrite)
+    plasmids_nomap, report = import_plasmids(plasmid_maps_dir, overwrite)
+    ret.append(report)
     for plasmid_obj in existing_plasmids_nomap:
         if plasmid_obj.name not in plasmids_nomap:
             print(plasmid.name + ' plasmid to be deleted')
@@ -341,12 +347,15 @@ def update_alldata(overwrite=False):
     if delete_objects:
         for item in delete_objects:
             item.delete()
+        ret.append('Plasmids without maps were deleted: ' + str(len(delete_objects)))
         delete_objects = []
     
-    import_magic_pools(os.path.join(plasmid_maps_dir, 'Magic_Pools', 'Magic_Pool_Summary_Sheet.xlsx'))
-
+    report = import_magic_pools(os.path.join(plasmid_maps_dir, 'Magic_Pools', 'Magic_Pool_Summary_Sheet.xlsx'))
+    ret.append(report)
+    
     existing_oligos = Oligo.objects.all()
-    new_oligo_names = import_oligos_table(oligos_file)
+    new_oligo_names, report = import_oligos_table(oligos_file)
+    ret.append(report)
     delete_objects = []
     for oligo_obj in existing_oligos:
         if oligo_obj.name not in new_oligo_names:
@@ -355,10 +364,12 @@ def update_alldata(overwrite=False):
     if delete_objects:
         for item in delete_objects:
             item.delete()
+        ret.append('Oligos deleted: ' + str(len(delete_objects)))
         delete_objects = []
     
     existing_strains = Strain.objects.all()
-    new_strain_amd_numbers = import_strains_table(strains_file)
+    new_strain_amd_numbers, report = import_strains_table(strains_file)
+    ret.append(report)
     delete_objects = []
     for strain_obj in existing_strains:
         if strain_obj.amd_number not in new_strain_amd_numbers:
@@ -367,7 +378,9 @@ def update_alldata(overwrite=False):
     if delete_objects:
         for item in delete_objects:
             item.delete()
+        ret.append('Strains deleted: ' + str(len(delete_objects)))
     make_blast_databases()
+    return ret
 
 
 def import_plasmids(work_dir, overwrite_existing):
@@ -390,8 +403,8 @@ def import_plasmids(work_dir, overwrite_existing):
                 ret = ret + import_plasmids_table(filepath, overwrite_existing)
             elif filename.endswith('.fa') or filename.endswith('.fna'):
                 obj_count += import_plasmid_fasta(filepath, filepath.split(work_dir)[-1][1:], overwrite_existing)
-    print(obj_count, 'plasmids created and/or updated')
-    return ret
+    report = 'Plasmids created and/or updated: ' + str(obj_count)
+    return ret, report
 
     
 def create_plasmid(plasmid_name, plasmid_data):
@@ -665,6 +678,7 @@ def import_magic_pool_types(xlsx_path):
                     )
                 else:
                     print(item, ' NOT FOUND IN MAGIC POOL PARTS')
+    return 'New magic pool types: ' + str(created_count)
 
 
 def create_magic_pool(magic_pool_rows, existing_magic_pools):
@@ -747,14 +761,15 @@ def import_magic_pools(xlsx_path):
         if magic_pool_name == '' or magic_pool_name is None:
             continue
         if magic_pool_name not in existing_magic_pools:
-            raise ValueError(magic_pool_name, 'magic pool from magic_pool_summary not found')
+            print(magic_pool_name + ' magic pool name is not listed in the magic_pool_summary sheet')
+            continue
         if Strain.objects.filter(amd_number=strain_amd).exists():
             existing_magic_pools[magic_pool_name].strain = Strain.objects.get(amd_number=strain_amd)
             existing_magic_pools[magic_pool_name].save()
         else:
             print(strain_amd, 'strain from not magic_pool_summary found')
     print(created_count, 'new magic pools created')
-
+    return 'New magic pools: ' + str(created_count)
 
 def create_strain(amd_number, strain_data):
     species = ''
@@ -855,8 +870,8 @@ def import_strains_table(xlsx_path, overwrite_existing=False):
                                 )
             else:
                 created_count += create_strain(amd_number, strain_data)
-    print(created_count, 'new strains created')
-    return ret
+    report = 'Strains created: ' + str(created_count)
+    return ret, report
 
 
 def create_oligo(name, oligo_data):
@@ -940,8 +955,9 @@ def import_oligos_table(xlsx_path, overwrite_existing=False):
             else:
                 print(oligo_data)
                 created_count += create_oligo(name, oligo_data)
-    print(created_count, 'new oligos created')
-    return(ret)
+    report = 'Oligos created: ' + str(created_count)
+    print(report)
+    return ret, report
     
 
 def make_blast_databases():
