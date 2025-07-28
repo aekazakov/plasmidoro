@@ -286,10 +286,12 @@ def import_plasmid_gbk(gbk_file, sequence_file, overwrite_existing):
 
 def update_alldata(overwrite=False):
     ret = []
+    subject = 'Plasmidoro: no new data'
     if not os.path.exists(DATA_DIR):
-        print("Data directory does not exists: " + DATA_DIR)
-        ret.append("Data directory does not exists: " + DATA_DIR)
-        return ret
+        print("Data directory does not exist: " + DATA_DIR)
+        ret.append("Data directory does not exist: " + DATA_DIR)
+        subject = 'Plasmidoro: data error'
+        return ret, subject
     else:
         print("Data directory: " + DATA_DIR)
     plasmid_maps_dir = os.path.join(DATA_DIR, 'plasmid_maps')
@@ -314,15 +316,19 @@ def update_alldata(overwrite=False):
         # (see https://github.com/PyCQA/pylint/issues/1860)
         # pylint: disable=no-member
         raise CalledProcessError(proc.returncode, proc.args)
+        subject = 'Plasmidoro: rclone error'
 
     # Import magic pool types and vector designs before importing plasmid files
     report = import_magic_pool_types(os.path.join(plasmid_maps_dir, 'magicpool_vector_designs', 'magic_pool_design.xlsx'))
+    if not report.endswith(' 0'):
+        subject = 'Plasmidoro: database updated'
     ret.append(report)
         
     if not os.path.exists(plasmid_maps_dir):
         print("Data directory does not exists: " + plasmid_maps_dir)
-        ret.append("Data directory does not exists: " + plasmid_maps_dir)
-        return ret
+        ret.append("Data directory does not exist: " + plasmid_maps_dir)
+        subject = 'Plasmidoro: data error'
+        return ret, subject
     else:
         print("Plasmid data directory found: " + plasmid_maps_dir)
     existing_plasmids_nomap = Plasmid.objects.filter(sequence_file='')
@@ -339,6 +345,8 @@ def update_alldata(overwrite=False):
         delete_objects = []
 
     plasmids_nomap, report = import_plasmids(plasmid_maps_dir, overwrite)
+    if not report.endswith(' 0'):
+        subject = 'Plasmidoro: database updated'
     ret.append(report)
     for plasmid_obj in existing_plasmids_nomap:
         if plasmid_obj.name not in plasmids_nomap:
@@ -351,10 +359,14 @@ def update_alldata(overwrite=False):
         delete_objects = []
     
     report = import_magic_pools(os.path.join(plasmid_maps_dir, 'Magic_Pools', 'Magic_Pool_Summary_Sheet.xlsx'))
+    if not report.endswith(' 0'):
+        subject = 'Plasmidoro: database updated'
     ret.append(report)
     
     existing_oligos = Oligo.objects.all()
     new_oligo_names, report = import_oligos_table(oligos_file)
+    if not report.endswith(' 0'):
+        subject = 'Plasmidoro: database updated'
     ret.append(report)
     delete_objects = []
     for oligo_obj in existing_oligos:
@@ -369,6 +381,8 @@ def update_alldata(overwrite=False):
     
     existing_strains = Strain.objects.all()
     new_strain_amd_numbers, report = import_strains_table(strains_file)
+    if not report.endswith(' 0'):
+        subject = 'Plasmidoro: database updated'
     ret.append(report)
     delete_objects = []
     for strain_obj in existing_strains:
@@ -380,7 +394,7 @@ def update_alldata(overwrite=False):
             item.delete()
         ret.append('Strains deleted: ' + str(len(delete_objects)))
     make_blast_databases()
-    return ret
+    return ret, subject
 
 
 def import_plasmids(work_dir, overwrite_existing):

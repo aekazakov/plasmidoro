@@ -6,8 +6,8 @@ class Command(BaseCommand):
     help = '''Update all data from the Google drive
     '''
     def add_arguments(self, parser):
-        parser.add_argument('--replace', action='store_true', help='Update existing plasmids if plasmid map files has changed')
+        parser.add_argument('--replace', action='store_true', help='Update all data types')
 
     def handle(self, *args, **options):
-        report = update_alldata(options['replace'])
-        mail_admins('Plasmidoro: update all data finished', '\n'.join(report))
+        report, subject = update_alldata(options['replace'])
+        mail_admins(subject, '\n'.join(report))
