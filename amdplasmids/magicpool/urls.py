@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, export
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -25,6 +25,7 @@ urlpatterns = [
     path('export/',views.export,name="export"),
     path('about/', views.show_help, name='about'),
     path('textsearch/', views.textsearch, name='textsearch'),
+    path('exportgbk/<str:name>/', export.export_gbk, name='exportgbk'),
 
 
     ]

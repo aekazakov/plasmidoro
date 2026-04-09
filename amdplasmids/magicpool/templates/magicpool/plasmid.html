@@ -30,75 +30,75 @@
             <header class="align-center">
               <p class="align-center">Description</p>
             </header>
-			<h5 class="align-center">{{ plasmid.description }}</h5>
-			{% if plasmid.sequence %}
-			<h5 class="align-center"><a href="{% url 'plasmidviewer' plasmid_id=plasmid.id  %}" target="_blank">View the plasmid in SeqViz</a></h5>
-			{% endif %}
-			{% if plasmid.amd_number != '' %}
+            <h5 class="align-center">{{ plasmid.description }}</h5>
+            {% if plasmid.sequence %}
+            <h5 class="align-center"><a href="{% url 'plasmidviewer' plasmid_id=plasmid.id  %}" target="_blank">View the plasmid in SeqViz</a></h5>
+            {% endif %}
+            {% if plasmid.amd_number != '' %}
             <header class="align-center">
               <p class="align-center">Strain</p>
             </header>
-			  {% if strain %}
-			  <h5 class="align-center"><a href="{% url 'straindetails' strain_id=strain.id  %}">{{ plasmid.amd_number }}</a></h5>
-		      {% else %}
-			  <h5 class="align-center">{{ plasmid.amd_number }}</h5>
-		      {% endif %}
-		    {% endif %}
+              {% if strain %}
+              <h5 class="align-center"><a href="{% url 'straindetails' strain_id=strain.id  %}">{{ plasmid.amd_number }}</a></h5>
+              {% else %}
+              <h5 class="align-center">{{ plasmid.amd_number }}</h5>
+              {% endif %}
+            {% endif %}
 
-			{% if plasmid.magic_pool_part %}
+            {% if plasmid.magic_pool_part %}
             <header class="align-center">
               <p class="align-center">Magic pool part</p>
             </header>
-			<h5 class="align-center">{{ plasmid.magic_pool_designation }} [<a href="{% url 'partdetails' part_id=plasmid.magic_pool_part.id  %}">{{ plasmid.magic_pool_part }}</a>]</h5>
-		    {% endif %}
-			{% if plasmid.sequence_file %}
+            <h5 class="align-center">{{ plasmid.magic_pool_designation }} [<a href="{% url 'partdetails' part_id=plasmid.magic_pool_part.id  %}">{{ plasmid.magic_pool_part }}</a>]</h5>
+            {% endif %}
+            {% if plasmid.sequence_file %}
             <header class="align-center">
               <p class="align-center">Source file</p>
             </header>
-			<h5 class="align-center">{{ plasmid.sequence_file }}</h5>
-		    {% endif %}
+            <h5 class="align-center">{{ plasmid.sequence_file }}</h5>
+            {% endif %}
           </div>
           <div class="content">
             <header class="align-center">
               <p class="align-center">Plasmid info</p>
             </header>
-			{% if plasmid_info %}
-			  {% for item in plasmid_info %}
-				<span><strong>{{ item.param }}</strong></span>
-				<h5>{{ item.value }}</h5>
-			  {% endfor %}
-			{% endif %}
+            {% if plasmid_info %}
+              {% for item in plasmid_info %}
+                <span><strong>{{ item.param }}</strong></span>
+                <h5>{{ item.value }}</h5>
+              {% endfor %}
+            {% endif %}
           </div>
         </div>
         <header class="align-center">
           <h2>Features</h2>
         </header>
-		{% if features %}
-		
-		<div class="table-wrapper">
-		  <table>
-			<thead>
-			  <tr>
-				<th>Name</th>
-				<th>Type</th>
-				<th>Location</th>
-				<th>Description</th>
-			  </tr>
-			</thead>
-			<tbody>
-			  {% for feature in features %}
-				<tr>
-				  <td>{{ feature.name }}</td>
-				  <td>{{ feature.feature_type.name }}</td>
-				  <td>{{ feature.location_str }}</td>
-				  <td>{{ feature.description }}</td>
-				</tr>
-			  {% endfor %}
-			</tbody>
-		  </table>
-		</div>
-		{% endif %}
-	    {% if plasmid.sequence %}
+        {% if features %}
+        
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for feature in features %}
+                <tr>
+                  <td>{{ feature.name }}</td>
+                  <td>{{ feature.feature_type.name }}</td>
+                  <td>{{ feature.location_str }}</td>
+                  <td>{{ feature.description }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+        {% if plasmid.sequence %}
         <header class="align-center">
           <h2>Plasmid sequence</h2>
         </header>
@@ -113,14 +113,50 @@
             <textarea id="plasmidsequence" name="plasmidsequence" rows="10" cols="50">>{{ plasmid.name }}|{{ plasmid.amd_number }}
 {{ plasmid.sequence }}</textarea>
           </div>
-        </div>
-		{% else %}
+
+      <div class="align-center">
+        <button type="button" id="ExportGbkLink">Export annotated plasmid in GenBank format</button>
+      </div>
+      <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+      <script>
+          $('#ExportGbkLink').on('click', function () {
+        $.ajax({
+          url: "{% url 'exportgbk' name=plasmid.name %}",
+          method: 'GET',
+          data: {},
+          xhrFields: {
+            responseType: 'text'
+          },
+          beforeSend: function() {
+            $("#waitbox").show();
+          },
+          success: function (data) {
+            $("#waitbox").hide();
+            var a = document.createElement('a');
+            const blob = new Blob([data], {type: "octet/stream"});
+            var url = window.URL.createObjectURL(blob);
+            a.href = url;
+            a.download = '{{ plasmid.name }}.gbk';
+            document.body.append(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          },
+          error: function(XMLHttpRequest, textStatus, errorThrown){
+            $("#waitbox").hide();
+            $("#error-box").append(textStatus + ": " + errorThrown);
+          }
+        });    
+          });
+      </script>
+      </div>
+        {% else %}
         <header class="align-center">
           <h2>No sequence available</h2>
         </header>
-		{% endif %}
-		
-	  </div>
+        {% endif %}
+        
+      </div>
     </section>
 {% endblock %}
 
